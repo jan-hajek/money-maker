@@ -1,0 +1,45 @@
+package main
+
+import (
+	"flag"
+	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/resolver/samson"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
+	"os"
+)
+
+func main() {
+	runType := os.Args[1]
+
+	config := flag.String("config", "./config.yml", "config file")
+	flag.Parse()
+
+	var t app.Config
+
+	yamlFile, err := ioutil.ReadFile(*config)
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, &t)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+
+	rReg := app.ResolverFactoryRegistry{
+		Items: make(map[string]app.ResolverFactory),
+	}
+
+	factory := samson.Factory{}
+	rReg.Add(&factory)
+
+	switch runType {
+	case "run":
+		app.App{t, &rReg}.Run()
+	case "batch":
+		app.App{t, &rReg}.Batch()
+	default:
+		panic("unknown param " + runType)
+	}
+}

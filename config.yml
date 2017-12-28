@@ -1,0 +1,23 @@
+#input: "./data/input.csv"
+input: "./data/real2017-test.csv"
+resolvers:
+  samson:
+    sarMinimalAf:
+      default: 0.010
+      minimal: 0.005
+      maximal: 0.010
+      step: 0.001
+    sarMaximalAf:
+      default: 0.2
+      minimal: 0.2
+      maximal: 0.2
+      step: 0.1
+    adxPeriod:
+      default: 14
+      minimal: 12
+      maximal: 17
+      step: 1
+outputs:
+  csv: ./data/output.csv
+  stdout: true
+parseFormat: "2006-01-02 15:04"
