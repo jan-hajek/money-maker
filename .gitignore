@@ -2,3 +2,4 @@
 .env
 data
 vendor/*
+config.yml
