@@ -3,9 +3,9 @@ package samson
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
-	"github.com/jelito/money-maker/calculator/adxAvg"
-	"github.com/jelito/money-maker/calculator/adxEma"
-	"github.com/jelito/money-maker/calculator/sar"
+	"github.com/jelito/money-maker/indicator/adxAvg"
+	"github.com/jelito/money-maker/indicator/adxEma"
+	"github.com/jelito/money-maker/indicator/sar"
 )
 
 type Service struct {
@@ -24,14 +24,14 @@ func (s *Service) GetPrintValues() []app.PrintValue {
 	}
 }
 
-func (s *Service) GetCalculators() []app.Calculator {
+func (s *Service) GetIndicators() []app.Indicator {
 	if s.config.SmoothType == AVG {
-		return []app.Calculator{
+		return []app.Indicator{
 			s.sar,
 			s.adxAvg,
 		}
 	} else {
-		return []app.Calculator{
+		return []app.Indicator{
 			s.sar,
 			s.adxEma,
 		}
@@ -49,17 +49,17 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 
 	var currentAdx, lastAdx, DIPlus, DIMinus float64
 
-	sarValues := input.CalculatorResult(s.sar).(sar.Result)
+	sarValues := input.IndicatorResult(s.sar).(sar.Result)
 	if s.config.SmoothType == AVG {
-		adxValues := input.CalculatorResult(s.adxAvg).(adxAvg.Result)
-		lastAdx = lastItem.CalculatorResult(s.adxAvg).(adxAvg.Result).Adx.Val()
+		adxValues := input.IndicatorResult(s.adxAvg).(adxAvg.Result)
+		lastAdx = lastItem.IndicatorResult(s.adxAvg).(adxAvg.Result).Adx.Val()
 
 		currentAdx = adxValues.Adx.Val()
 		DIPlus = adxValues.DIPlus.Val()
 		DIMinus = adxValues.DIMinus.Val()
 	} else {
-		adxValues := input.CalculatorResult(s.adxEma).(adxEma.Result)
-		lastAdx = lastItem.CalculatorResult(s.adxEma).(adxEma.Result).Adx.Val()
+		adxValues := input.IndicatorResult(s.adxEma).(adxEma.Result)
+		lastAdx = lastItem.IndicatorResult(s.adxEma).(adxEma.Result).Adx.Val()
 
 		currentAdx = adxValues.Adx.Val()
 		DIPlus = adxValues.DIPlus.Val()
@@ -68,7 +68,7 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 
 	currentSar := sarValues.Sar
 	currentSarVal := currentSar.Val()
-	lastSar := lastItem.CalculatorResult(s.sar).(sar.Result).Sar
+	lastSar := lastItem.IndicatorResult(s.sar).(sar.Result).Sar
 	lastSarValue := lastSar.Val()
 
 	currentPrice := input.DateInput.ClosePrice.Val()

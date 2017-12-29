@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-type Calculator interface {
-	Calculate(input CalculatorInput, history *History) CalculatorResult
+type Indicator interface {
+	Calculate(input IndicatorInput, history *History) IndicatorResult
 	GetName() string
 }
 
-type CalculatorInput struct {
+type IndicatorInput struct {
 	Date       time.Time
 	OpenPrice  float.Float
 	ClosePrice float.Float
@@ -19,6 +19,6 @@ type CalculatorInput struct {
 	Iteration  int
 }
 
-type CalculatorResult interface {
+type IndicatorResult interface {
 	Print() []PrintValue
 }

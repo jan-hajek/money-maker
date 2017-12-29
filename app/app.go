@@ -34,23 +34,23 @@ func (s App) Run() {
 
 	var lastPosition *Position
 
-	calculators := strategy.GetCalculators()
+	indicators := strategy.GetIndicators()
 
 	history := &History{
-		strategy:    strategy,
-		calculators: calculators,
+		strategy:   strategy,
+		indicators: indicators,
 	}
 
 	iteration := 0
 	for _, dateInput := range dateInputs {
 
-		calculatorResults := map[string]CalculatorResult{}
+		indicatorResults := map[string]IndicatorResult{}
 
 		iteration++
 
 		// FIXME - jhajek go rutiny
-		for _, c := range calculators {
-			input := CalculatorInput{
+		for _, c := range indicators {
+			input := IndicatorInput{
 				Date:       dateInput.Date,
 				OpenPrice:  dateInput.OpenPrice,
 				HighPrice:  dateInput.HighPrice,
@@ -59,23 +59,23 @@ func (s App) Run() {
 				Iteration:  iteration,
 			}
 
-			calculatorResults[c.GetName()] = c.Calculate(input, history)
+			indicatorResults[c.GetName()] = c.Calculate(input, history)
 		}
 
 		strategyResult := strategy.Resolve(StrategyInput{
-			DateInput:         dateInput,
-			History:           history,
-			Position:          lastPosition,
-			CalculatorResults: calculatorResults,
+			DateInput:        dateInput,
+			History:          history,
+			Position:         lastPosition,
+			IndicatorResults: indicatorResults,
 		})
 
 		lastPosition = createPosition(strategyResult, dateInput, lastPosition)
 
 		historyItem := &HistoryItem{
-			DateInput:         dateInput,
-			CalculatorResults: calculatorResults,
-			StrategyResult:    strategyResult,
-			Position:          lastPosition,
+			DateInput:        dateInput,
+			IndicatorResults: indicatorResults,
+			StrategyResult:   strategyResult,
+			Position:         lastPosition,
 		}
 
 		history.AddItem(historyItem)

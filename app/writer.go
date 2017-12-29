@@ -162,8 +162,8 @@ func writerGetHistoryHeader(history *History) []string {
 	}
 
 	for _, item := range history.GetLastItems(1) {
-		for _, calculatorResult := range item.OrderedCalculatorResults() {
-			for _, param := range calculatorResult.Print() {
+		for _, indicatorResult := range item.OrderedIndicatorResults() {
+			for _, param := range indicatorResult.Print() {
 				a = append(a, param.Label)
 			}
 		}
@@ -191,8 +191,8 @@ func writerGetHistoryRow(item *HistoryItem, dateFormat string) []string {
 		formatValue(item.DateInput.ClosePrice),
 	}
 
-	for _, calculatorResult := range item.OrderedCalculatorResults() {
-		for _, printedValue := range calculatorResult.Print() {
+	for _, indicatorResult := range item.OrderedIndicatorResults() {
+		for _, printedValue := range indicatorResult.Print() {
 			values = append(values, formatValue(printedValue.Value))
 		}
 	}

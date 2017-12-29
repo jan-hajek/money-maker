@@ -6,9 +6,9 @@ import (
 )
 
 type History struct {
-	strategy    Strategy
-	calculators []Calculator
-	items       []*HistoryItem
+	strategy   Strategy
+	indicators []Indicator
+	items      []*HistoryItem
 }
 
 func (s *History) AddItem(result *HistoryItem) {
@@ -38,29 +38,29 @@ func (s *History) GetAll() []*HistoryItem {
 }
 
 type HistoryItem struct {
-	DateInput         DateInput
-	CalculatorResults map[string]CalculatorResult
-	StrategyResult    StrategyResult
-	Position          *Position
+	DateInput        DateInput
+	IndicatorResults map[string]IndicatorResult
+	StrategyResult   StrategyResult
+	Position         *Position
 }
 
-func (s *HistoryItem) CalculatorResult(c Calculator) CalculatorResult {
-	item := s.CalculatorResults[c.GetName()]
+func (s *HistoryItem) IndicatorResult(c Indicator) IndicatorResult {
+	item := s.IndicatorResults[c.GetName()]
 
 	return item
 }
 
-func (s *HistoryItem) OrderedCalculatorResults() []CalculatorResult {
+func (s *HistoryItem) OrderedIndicatorResults() []IndicatorResult {
 
 	var keys []string
-	for k := range s.CalculatorResults {
+	for k := range s.IndicatorResults {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
-	var ordered []CalculatorResult
+	var ordered []IndicatorResult
 	for _, k := range keys {
-		ordered = append(ordered, s.CalculatorResults[k])
+		ordered = append(ordered, s.IndicatorResults[k])
 	}
 
 	return ordered

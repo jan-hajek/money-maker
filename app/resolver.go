@@ -7,19 +7,19 @@ import (
 
 type Strategy interface {
 	Resolve(input StrategyInput) StrategyResult
-	GetCalculators() []Calculator
+	GetIndicators() []Indicator
 	GetPrintValues() []PrintValue
 }
 
 type StrategyInput struct {
-	DateInput         DateInput
-	CalculatorResults map[string]CalculatorResult
-	History           *History
-	Position          *Position
+	DateInput        DateInput
+	IndicatorResults map[string]IndicatorResult
+	History          *History
+	Position         *Position
 }
 
-func (s *StrategyInput) CalculatorResult(c Calculator) CalculatorResult {
-	return s.CalculatorResults[c.GetName()]
+func (s *StrategyInput) IndicatorResult(c Indicator) IndicatorResult {
+	return s.IndicatorResults[c.GetName()]
 }
 
 type StrategyResult struct {

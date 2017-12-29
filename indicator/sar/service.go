@@ -12,7 +12,7 @@ type Service struct {
 	MaximalAf float.Float
 }
 
-func (s Service) Calculate(current app.CalculatorInput, history *app.History) app.CalculatorResult {
+func (s Service) Calculate(current app.IndicatorInput, history *app.History) app.IndicatorResult {
 
 	if current.Iteration == 1 {
 		return Result{}
@@ -23,7 +23,7 @@ func (s Service) Calculate(current app.CalculatorInput, history *app.History) ap
 
 	lastDay, _ := history.GetLastItem()
 	lastInput := lastDay.DateInput
-	lastIndicator := lastDay.CalculatorResult(s).(Result).Sar
+	lastIndicator := lastDay.IndicatorResult(s).(Result).Sar
 
 	if current.Iteration == 2 {
 		sar := lastInput.HighPrice
@@ -38,7 +38,7 @@ func (s Service) Calculate(current app.CalculatorInput, history *app.History) ap
 		}
 	}
 
-	lastValues := lastDay.CalculatorResult(s).(Result)
+	lastValues := lastDay.IndicatorResult(s).(Result)
 
 	// treti den
 	ep := float.New(0.0)

@@ -3,9 +3,9 @@ package samson
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
-	"github.com/jelito/money-maker/calculator/adxAvg"
-	"github.com/jelito/money-maker/calculator/adxEma"
-	"github.com/jelito/money-maker/calculator/sar"
+	"github.com/jelito/money-maker/indicator/adxAvg"
+	"github.com/jelito/money-maker/indicator/adxEma"
+	"github.com/jelito/money-maker/indicator/sar"
 )
 
 type Factory struct {
