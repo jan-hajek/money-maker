@@ -37,9 +37,9 @@ func (s *Position) clone() *Position {
 
 var lastPositionId = 0
 
-func createPosition(resolverResult ResolverResult, dateInput DateInput, lastPosition *Position) *Position {
+func createPosition(strategyResult StrategyResult, dateInput DateInput, lastPosition *Position) *Position {
 
-	switch resolverResult.Action {
+	switch strategyResult.Action {
 	case OPEN:
 		if lastPosition != nil {
 			panic("position is already open")
@@ -47,12 +47,12 @@ func createPosition(resolverResult ResolverResult, dateInput DateInput, lastPosi
 		lastPositionId++
 		newPosition := &Position{
 			Id:        lastPositionId,
-			Type:      resolverResult.PositionType,
+			Type:      strategyResult.PositionType,
 			StartDate: dateInput.Date,
 			OpenPrice: dateInput.ClosePrice,
-			Amount:    resolverResult.Amount,
-			Sl:        resolverResult.Sl,
-			Costs:     resolverResult.Costs,
+			Amount:    strategyResult.Amount,
+			Sl:        strategyResult.Sl,
+			Costs:     strategyResult.Costs,
 		}
 
 		newPosition.Profit = calculateProfit(newPosition)
@@ -66,8 +66,8 @@ func createPosition(resolverResult ResolverResult, dateInput DateInput, lastPosi
 		newPosition := lastPosition.clone()
 
 		newPosition.ClosePrice = dateInput.ClosePrice
-		newPosition.Sl = resolverResult.Sl
-		newPosition.Costs = resolverResult.Costs
+		newPosition.Sl = strategyResult.Sl
+		newPosition.Costs = strategyResult.Costs
 		newPosition.Profit = calculateProfit(newPosition)
 		newPosition.PossibleProfit = newPosition.Profit
 
@@ -78,8 +78,8 @@ func createPosition(resolverResult ResolverResult, dateInput DateInput, lastPosi
 		}
 		newPosition := lastPosition.clone()
 
-		newPosition.Sl = resolverResult.Sl
-		newPosition.Costs = resolverResult.Costs
+		newPosition.Sl = strategyResult.Sl
+		newPosition.Costs = strategyResult.Costs
 		newPosition.Profit = calculateProfit(newPosition)
 		newPosition.PossibleProfit = calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 

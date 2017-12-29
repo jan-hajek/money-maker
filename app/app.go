@@ -2,7 +2,7 @@ package app
 
 type App struct {
 	Config                  Config
-	ResolverFactoryRegistry *ResolverFactoryRegistry
+	StrategyFactoryRegistry *StrategyFactoryRegistry
 }
 
 // FIXME - jhajek yzanoreni
@@ -10,21 +10,21 @@ type Config struct {
 	InputFile   string                                       `yaml:"input"`
 	ParseFormat string                                       `yaml:"parseFormat"`
 	Outputs     map[string]interface{}                       `yaml:"outputs"`
-	Resolvers   map[string]map[string]map[string]interface{} `yaml:"resolvers"`
+	Strategies  map[string]map[string]map[string]interface{} `yaml:"strategies"`
 }
 
 func (s App) Run() {
 
 	// FIXME - jhajek
-	var resolver Resolver
+	var strategy Strategy
 
-	for resolverFactoryName, resolverValues := range s.Config.Resolvers {
-		resolverFactory, err := s.ResolverFactoryRegistry.GetByName(resolverFactoryName)
+	for strategyFactoryName, StrategyValues := range s.Config.Strategies {
+		strategyFactory, err := s.StrategyFactoryRegistry.GetByName(strategyFactoryName)
 		if err != nil {
 			panic(err)
 		}
 
-		resolver = resolverFactory.Create(resolverFactory.GetDefaultConfig(resolverValues))
+		strategy = strategyFactory.Create(strategyFactory.GetDefaultConfig(StrategyValues))
 	}
 
 	dateInputs, err := getDateInputs(s.Config.InputFile, s.Config.ParseFormat)
@@ -34,10 +34,10 @@ func (s App) Run() {
 
 	var lastPosition *Position
 
-	calculators := resolver.GetCalculators()
+	calculators := strategy.GetCalculators()
 
 	history := &History{
-		resolver:    resolver,
+		strategy:    strategy,
 		calculators: calculators,
 	}
 
@@ -62,25 +62,25 @@ func (s App) Run() {
 			calculatorResults[c.GetName()] = c.Calculate(input, history)
 		}
 
-		resolverResult := resolver.Resolve(ResolverInput{
+		strategyResult := strategy.Resolve(StrategyInput{
 			DateInput:         dateInput,
 			History:           history,
 			Position:          lastPosition,
 			CalculatorResults: calculatorResults,
 		})
 
-		lastPosition = createPosition(resolverResult, dateInput, lastPosition)
+		lastPosition = createPosition(strategyResult, dateInput, lastPosition)
 
 		historyItem := &HistoryItem{
 			DateInput:         dateInput,
 			CalculatorResults: calculatorResults,
-			ResolverResult:    resolverResult,
+			StrategyResult:    strategyResult,
 			Position:          lastPosition,
 		}
 
 		history.AddItem(historyItem)
 
-		if resolverResult.Action == CLOSE {
+		if strategyResult.Action == CLOSE {
 			lastPosition = nil
 		}
 	}

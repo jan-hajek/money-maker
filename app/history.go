@@ -6,7 +6,7 @@ import (
 )
 
 type History struct {
-	resolver    Resolver
+	strategy    Strategy
 	calculators []Calculator
 	items       []*HistoryItem
 }
@@ -40,7 +40,7 @@ func (s *History) GetAll() []*HistoryItem {
 type HistoryItem struct {
 	DateInput         DateInput
 	CalculatorResults map[string]CalculatorResult
-	ResolverResult    ResolverResult
+	StrategyResult    StrategyResult
 	Position          *Position
 }
 

@@ -86,6 +86,9 @@ func (s *StdOutWriterOutput) WriteHistory(history *History) error {
 }
 
 func (s *StdOutWriterOutput) WriteSummary(summaryList []*Summary) error {
+	if len(summaryList) == 0 {
+		return nil
+	}
 	s.write(s.w, writerGetSummaryHeader(summaryList[0])...)
 	for _, summary := range summaryList {
 		s.write(s.w, writerGetSummaryRow(summary)...)
@@ -137,6 +140,9 @@ func (s *CsvWriterOutput) WriteHistory(history *History) error {
 }
 
 func (s *CsvWriterOutput) WriteSummary(summaryList []*Summary) error {
+	if len(summaryList) == 0 {
+		return nil
+	}
 	s.writer.Write(writerGetSummaryHeader(summaryList[0]))
 	for _, summary := range summaryList {
 		s.writer.Write(writerGetSummaryRow(summary))
@@ -193,7 +199,7 @@ func writerGetHistoryRow(item *HistoryItem, dateFormat string) []string {
 
 	if position != nil {
 		values = append(values,
-			formatValue(item.ResolverResult.Action),
+			formatValue(item.StrategyResult.Action),
 			formatValue(position.Id),
 			formatValue(position.Type),
 			formatValue(position.Amount),
@@ -211,7 +217,7 @@ func writerGetSummaryHeader(summary *Summary) []string {
 
 	var a []string
 
-	for _, value := range summary.ResolverPrintValues {
+	for _, value := range summary.StrategyPrintValues {
 		a = append(a, value.Label)
 	}
 
@@ -229,7 +235,7 @@ func writerGetSummaryHeader(summary *Summary) []string {
 func writerGetSummaryRow(summary *Summary) []string {
 	var a []string
 
-	for _, value := range summary.ResolverPrintValues {
+	for _, value := range summary.StrategyPrintValues {
 		a = append(a, formatValue(value.Value))
 	}
 

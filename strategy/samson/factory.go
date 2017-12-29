@@ -15,7 +15,7 @@ func (s *Factory) GetName() string {
 	return "samson"
 }
 
-func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.ResolverFactoryConfig {
+func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.StrategyFactoryConfig {
 	return Config{
 		SarMinimalAf: config["sarMinimalAf"]["default"].(float64),
 		SarMaximalAf: config["sarMaximalAf"]["default"].(float64),
@@ -24,7 +24,7 @@ func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app
 	}
 }
 
-func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []app.ResolverFactoryConfig {
+func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []app.StrategyFactoryConfig {
 	sarMinValues := app.FloatSteps(
 		config["sarMinimalAf"]["minimal"].(float64),
 		config["sarMinimalAf"]["maximal"].(float64),
@@ -49,7 +49,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 			len(adxPeriodValues),
 			len(smoothTypes),
 		},
-		func(positions []int) app.ResolverFactoryConfig {
+		func(positions []int) app.StrategyFactoryConfig {
 			return Config{
 				SarMinimalAf: sarMinValues[positions[0]],
 				SarMaximalAf: sarMaxValues[positions[1]],
@@ -60,7 +60,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 	)
 }
 
-func (s *Factory) Create(config app.ResolverFactoryConfig) app.Resolver {
+func (s *Factory) Create(config app.StrategyFactoryConfig) app.Strategy {
 
 	service := &Service{
 		config: config.(Config),

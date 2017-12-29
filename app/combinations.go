@@ -1,8 +1,8 @@
 package app
 
-func Combinations(input []int, createResult func([]int) ResolverFactoryConfig) []ResolverFactoryConfig {
+func Combinations(input []int, createResult func([]int) StrategyFactoryConfig) []StrategyFactoryConfig {
 	positions := make([]int, len(input))
-	var results []ResolverFactoryConfig
+	var results []StrategyFactoryConfig
 
 	for index := 0; index < len(input); {
 		if positions[index] == input[index]-1 {

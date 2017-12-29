@@ -38,11 +38,11 @@ func (s *Service) GetCalculators() []app.Calculator {
 	}
 }
 
-func (s Service) Resolve(input app.ResolverInput) app.ResolverResult {
+func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 
 	lastItem, err := input.History.GetLastItem()
 	if err != nil {
-		return app.ResolverResult{
+		return app.StrategyResult{
 			Action: app.SKIP,
 		}
 	}
@@ -86,7 +86,7 @@ func (s Service) Resolve(input app.ResolverInput) app.ResolverResult {
 			}
 
 			if positionType != "" {
-				return app.ResolverResult{
+				return app.StrategyResult{
 					Action:       app.OPEN,
 					PositionType: positionType,
 					Amount:       float.New(1.0),
@@ -98,14 +98,14 @@ func (s Service) Resolve(input app.ResolverInput) app.ResolverResult {
 	} else {
 		if input.Position.Type == app.LONG {
 			if currentSarVal < currentPrice && currentSarVal > lastSarValue {
-				return app.ResolverResult{
+				return app.StrategyResult{
 					Action: app.CHANGE,
 					Sl:     currentSar,
 				}
 			}
 
 			if currentSarVal > currentPrice {
-				return app.ResolverResult{
+				return app.StrategyResult{
 					Action: app.CLOSE,
 					Sl:     lastSar,
 				}
@@ -114,14 +114,14 @@ func (s Service) Resolve(input app.ResolverInput) app.ResolverResult {
 
 		if input.Position.Type == app.SHORT {
 			if currentSarVal > currentPrice && currentSarVal < lastSarValue {
-				return app.ResolverResult{
+				return app.StrategyResult{
 					Action: app.CHANGE,
 					Sl:     currentSar,
 				}
 			}
 
 			if currentSarVal < currentPrice {
-				return app.ResolverResult{
+				return app.StrategyResult{
 					Action: app.CLOSE,
 					Sl:     lastSar,
 				}
@@ -129,7 +129,7 @@ func (s Service) Resolve(input app.ResolverInput) app.ResolverResult {
 		}
 	}
 
-	return app.ResolverResult{
+	return app.StrategyResult{
 		Action: app.SKIP,
 	}
 

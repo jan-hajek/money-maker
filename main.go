@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/jelito/money-maker/app"
-	"github.com/jelito/money-maker/resolver/samson"
+	"github.com/jelito/money-maker/strategy/samson"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -27,8 +27,8 @@ func main() {
 		log.Fatalf("Unmarshal: %v", err)
 	}
 
-	rReg := app.ResolverFactoryRegistry{
-		Items: make(map[string]app.ResolverFactory),
+	rReg := app.StrategyFactoryRegistry{
+		Items: make(map[string]app.StrategyFactory),
 	}
 
 	factory := samson.Factory{}

@@ -5,62 +5,62 @@ import (
 	"github.com/jelito/money-maker/app/float"
 )
 
-type Resolver interface {
-	Resolve(input ResolverInput) ResolverResult
+type Strategy interface {
+	Resolve(input StrategyInput) StrategyResult
 	GetCalculators() []Calculator
 	GetPrintValues() []PrintValue
 }
 
-type ResolverInput struct {
+type StrategyInput struct {
 	DateInput         DateInput
 	CalculatorResults map[string]CalculatorResult
 	History           *History
 	Position          *Position
 }
 
-func (s *ResolverInput) CalculatorResult(name string) CalculatorResult {
+func (s *StrategyInput) CalculatorResult(name string) CalculatorResult {
 	return s.CalculatorResults[name]
 }
 
-type ResolverResult struct {
-	Action       ResolverAction
+type StrategyResult struct {
+	Action       StrategyAction
 	PositionType PositionType
 	Amount       float.Float
 	Sl           float.Float
 	Costs        float.Float
 }
 
-type ResolverAction string
+type StrategyAction string
 
 const (
-	SKIP   ResolverAction = "skip"
+	SKIP   StrategyAction = "skip"
 	OPEN                  = "open"
 	CLOSE                 = "close"
 	CHANGE                = "change"
 )
 
-type ResolverFactory interface {
+type StrategyFactory interface {
 	GetName() string
-	GetDefaultConfig(config map[string]map[string]interface{}) ResolverFactoryConfig
-	GetBatchConfigs(config map[string]map[string]interface{}) []ResolverFactoryConfig
-	Create(config ResolverFactoryConfig) Resolver
+	GetDefaultConfig(config map[string]map[string]interface{}) StrategyFactoryConfig
+	GetBatchConfigs(config map[string]map[string]interface{}) []StrategyFactoryConfig
+	Create(config StrategyFactoryConfig) Strategy
 }
 
-type ResolverFactoryConfig interface {
+type StrategyFactoryConfig interface {
 }
 
-type ResolverFactoryRegistry struct {
-	Items map[string]ResolverFactory
+type StrategyFactoryRegistry struct {
+	Items map[string]StrategyFactory
 }
 
-func (s *ResolverFactoryRegistry) Add(r ResolverFactory) {
+func (s *StrategyFactoryRegistry) Add(r StrategyFactory) {
 	s.Items[r.GetName()] = r
 }
 
-func (s *ResolverFactoryRegistry) GetByName(name string) (ResolverFactory, error) {
+func (s *StrategyFactoryRegistry) GetByName(name string) (StrategyFactory, error) {
 	item, ok := s.Items[name]
 	if ok == false {
-		return nil, errors.New("unknown resolver factory " + name)
+		return nil, errors.New("unknown strategy factory " + name)
 	}
 	return item, nil
 }

@@ -3,7 +3,7 @@ package app
 import "github.com/jelito/money-maker/app/float"
 
 type Summary struct {
-	ResolverPrintValues []PrintValue
+	StrategyPrintValues []PrintValue
 	CountOfPositions    int
 	CountOfProfitable   int
 	CountOfLossy        int
@@ -17,10 +17,10 @@ type Summary struct {
 }
 
 func (s *Summary) FillFromHistory(history *History) {
-	s.ResolverPrintValues = history.resolver.GetPrintValues()
+	s.StrategyPrintValues = history.strategy.GetPrintValues()
 
 	for _, item := range history.GetAll() {
-		if item.ResolverResult.Action == CLOSE {
+		if item.StrategyResult.Action == CLOSE {
 			if item.Position.Profit.Val() > 0.0 {
 				s.CountOfProfitable++
 				s.SumOfProfitable = float.New(s.SumOfProfitable.Val() + item.Position.Profit.Val())
