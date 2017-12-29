@@ -1,19 +1,22 @@
 package app
 
-import "time"
+import (
+	"github.com/jelito/money-maker/app/float"
+	"time"
+)
 
 type Position struct {
 	Id             int
 	Type           PositionType
 	StartDate      time.Time
 	CloseDate      time.Time
-	OpenPrice      float64
-	ClosePrice     float64
-	Amount         float64
-	Sl             float64
-	Costs          float64
-	Profit         float64
-	PossibleProfit float64
+	OpenPrice      float.Float
+	ClosePrice     float.Float
+	Amount         float.Float
+	Sl             float.Float
+	Costs          float.Float
+	Profit         float.Float
+	PossibleProfit float.Float
 }
 
 func (s *Position) clone() *Position {
@@ -95,22 +98,22 @@ func createPosition(resolverResult ResolverResult, dateInput DateInput, lastPosi
 	return lastPosition
 }
 
-func calculateProfit(position *Position) float64 {
-	profit := position.Amount * (position.ClosePrice - position.OpenPrice)
+func calculateProfit(position *Position) float.Float {
+	profit := position.Amount.Val() * (position.ClosePrice.Val() - position.OpenPrice.Val())
 	if position.Type == SHORT {
 		profit *= -1
 	}
 
-	return profit - position.Costs
+	return float.New(profit - position.Costs.Val())
 }
 
-func calculatePossibleProfit(position *Position, actualPrice float64) float64 {
-	profit := position.Amount * (actualPrice - position.OpenPrice)
+func calculatePossibleProfit(position *Position, actualPrice float.Float) float.Float {
+	profit := position.Amount.Val() * (actualPrice.Val() - position.OpenPrice.Val())
 	if position.Type == SHORT {
 		profit *= -1
 	}
 
-	return profit - position.Costs
+	return float.New(profit - position.Costs.Val())
 }
 
 type PositionType string

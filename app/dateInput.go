@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/csv"
+	"github.com/jelito/money-maker/app/float"
 	"io"
 	"os"
 	"strconv"
@@ -58,10 +59,10 @@ func getDateInputs(inputFilePath, parseFormat string) ([]DateInput, error) {
 
 		data = append(data, DateInput{
 			Date:       date,
-			OpenPrice:  openPrice,
-			ClosePrice: closePrice,
-			HighPrice:  highPrice,
-			LowPrice:   lowPrice,
+			OpenPrice:  float.New(openPrice),
+			ClosePrice: float.New(closePrice),
+			HighPrice:  float.New(highPrice),
+			LowPrice:   float.New(lowPrice),
 		})
 
 		lineCount += 1

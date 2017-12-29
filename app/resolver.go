@@ -1,6 +1,9 @@
 package app
 
-import "errors"
+import (
+	"errors"
+	"github.com/jelito/money-maker/app/float"
+)
 
 type Resolver interface {
 	Resolve(input ResolverInput) ResolverResult
@@ -22,9 +25,9 @@ func (s *ResolverInput) CalculatorResult(name string) CalculatorResult {
 type ResolverResult struct {
 	Action       ResolverAction
 	PositionType PositionType
-	Amount       float64
-	Sl           float64
-	Costs        float64
+	Amount       float.Float
+	Sl           float.Float
+	Costs        float.Float
 }
 
 type ResolverAction string

@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/jelito/money-maker/app/float"
 	"io"
 	"os"
 	"text/tabwriter"
@@ -152,7 +153,6 @@ func writerGetHistoryHeader(history *History) []string {
 	a := []string{
 		"date",
 		"price",
-		"",
 	}
 
 	for _, item := range history.GetLastItems(1) {
@@ -182,8 +182,7 @@ func writerGetHistoryRow(item *HistoryItem, dateFormat string) []string {
 	position := item.Position
 	values := []string{
 		item.DateInput.Date.Format(dateFormat),
-		fmt.Sprintf("%.3f", item.DateInput.ClosePrice),
-		"",
+		formatValue(item.DateInput.ClosePrice),
 	}
 
 	for _, calculatorResult := range item.OrderedCalculatorResults() {
@@ -194,15 +193,14 @@ func writerGetHistoryRow(item *HistoryItem, dateFormat string) []string {
 
 	if position != nil {
 		values = append(values,
-			"",
-			fmt.Sprintf("%s", item.ResolverResult.Action),
-			fmt.Sprintf("%d", position.Id),
-			fmt.Sprintf("%s", position.Type),
-			fmt.Sprintf("%.3f", position.Amount),
-			fmt.Sprintf("%.3f", position.Sl),
-			fmt.Sprintf("%.3f", position.Costs),
-			fmt.Sprintf("%.3f", position.Profit),
-			fmt.Sprintf("%.3f", position.PossibleProfit),
+			formatValue(item.ResolverResult.Action),
+			formatValue(position.Id),
+			formatValue(position.Type),
+			formatValue(position.Amount),
+			formatValue(position.Sl),
+			formatValue(position.Costs),
+			formatValue(position.Profit),
+			formatValue(position.PossibleProfit),
 		)
 	}
 
@@ -221,12 +219,11 @@ func writerGetSummaryHeader(summary *Summary) []string {
 		"Profit",
 		"Sum Profitable",
 		"Sum Lossy",
-		"Positions",
-		"Profitable",
-		"Lossy",
+		"Ratio(%)",
+		"Positions(+/-)",
 		"Avg Positions",
-		"Avg Profitable",
-		"Avg Lossy",
+		"Avg Profit",
+		"Avg Lost",
 	)
 }
 func writerGetSummaryRow(summary *Summary) []string {
@@ -237,20 +234,23 @@ func writerGetSummaryRow(summary *Summary) []string {
 	}
 
 	return append(a,
-		fmt.Sprintf("%.3f", summary.Profit),
-		fmt.Sprintf("%.3f", summary.SumOfProfitable),
-		fmt.Sprintf("%.3f", summary.SumOfLossy),
-		fmt.Sprintf("%d", summary.CountOfPositions),
-		fmt.Sprintf("%d", summary.CountOfProfitable),
-		fmt.Sprintf("%d", summary.CountOfLossy),
-		fmt.Sprintf("%.3f", summary.AvgOfPositions),
-		fmt.Sprintf("%.3f", summary.AvgOfProfitable),
-		fmt.Sprintf("%.3f", summary.AvgOfLossy),
+		formatValue(summary.Profit),
+		formatValue(summary.SumOfProfitable),
+		formatValue(summary.SumOfLossy),
+		formatValue(summary.SuccessRatio),
+		formatValue(summary.CountOfPositions)+"("+
+			formatValue(summary.CountOfProfitable)+"/"+
+			formatValue(summary.CountOfLossy)+")",
+		formatValue(summary.AvgOfPositions),
+		formatValue(summary.AvgOfProfit),
+		formatValue(summary.AvgOfLost),
 	)
 }
 
 func formatValue(value interface{}) string {
 	switch v := value.(type) {
+	case float.Float:
+		return fmt.Sprintf("%.3f", v.Val())
 	case float64:
 		return fmt.Sprintf("%.3f", v)
 	case int:

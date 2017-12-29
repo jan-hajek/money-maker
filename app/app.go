@@ -5,7 +5,7 @@ type App struct {
 	ResolverFactoryRegistry *ResolverFactoryRegistry
 }
 
-// FIXME - jhajek zanoreni
+// FIXME - jhajek yzanoreni
 type Config struct {
 	InputFile   string                                       `yaml:"input"`
 	ParseFormat string                                       `yaml:"parseFormat"`
@@ -32,10 +32,14 @@ func (s App) Run() {
 		panic(err)
 	}
 
-	writer := s.createWriter()
-
 	var lastPosition *Position
-	history := History{}
+
+	calculators := resolver.GetCalculators()
+
+	history := &History{
+		resolver:    resolver,
+		calculators: calculators,
+	}
 
 	iteration := 0
 	for _, dateInput := range dateInputs {
@@ -45,7 +49,7 @@ func (s App) Run() {
 		iteration++
 
 		// FIXME - jhajek go rutiny
-		for _, c := range resolver.GetCalculators() {
+		for _, c := range calculators {
 			input := CalculatorInput{
 				Date:       dateInput.Date,
 				OpenPrice:  dateInput.OpenPrice,
@@ -55,12 +59,12 @@ func (s App) Run() {
 				Iteration:  iteration,
 			}
 
-			calculatorResults[c.GetName()] = c.Calculate(input, &history)
+			calculatorResults[c.GetName()] = c.Calculate(input, history)
 		}
 
 		resolverResult := resolver.Resolve(ResolverInput{
 			DateInput:         dateInput,
-			History:           &history,
+			History:           history,
 			Position:          lastPosition,
 			CalculatorResults: calculatorResults,
 		})
@@ -82,14 +86,16 @@ func (s App) Run() {
 	}
 
 	summary := Summary{}
-	summary.FillFromHistory(&history)
+	summary.FillFromHistory(history)
+
+	writer := s.createWriter()
 
 	err = writer.Open()
 	if err != nil {
 		panic(err)
 	}
 
-	err = writer.WriteHistory(&history)
+	err = writer.WriteHistory(history)
 	if err != nil {
 		panic(err)
 	}

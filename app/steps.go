@@ -1,10 +1,12 @@
-package math
+package app
+
+import "github.com/jelito/money-maker/app/round"
 
 func FloatSteps(min, max, step float64) []float64 {
 	var results []float64
 
 	for x := min; x <= max; x += step {
-		x = Round(x, .5, 3)
+		x = round.Round(x, 3)
 		results = append(results, x)
 	}
 

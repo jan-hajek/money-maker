@@ -1,11 +1,14 @@
 package app
 
-import "time"
+import (
+	"github.com/jelito/money-maker/app/float"
+	"time"
+)
 
 type DateInput struct {
 	Date       time.Time
-	OpenPrice  float64
-	ClosePrice float64
-	HighPrice  float64
-	LowPrice   float64
+	OpenPrice  float.Float
+	ClosePrice float.Float
+	HighPrice  float.Float
+	LowPrice   float.Float
 }
