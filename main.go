@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/strategy/jones"
 	"github.com/jelito/money-maker/strategy/samson"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -31,8 +32,11 @@ func main() {
 		Items: make(map[string]app.StrategyFactory),
 	}
 
-	factory := samson.Factory{}
-	rReg.Add(&factory)
+	samson := samson.Factory{}
+	rReg.Add(&samson)
+
+	jones := jones.Factory{}
+	rReg.Add(&jones)
 
 	switch runType {
 	case "run":
