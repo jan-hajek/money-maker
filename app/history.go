@@ -44,8 +44,8 @@ type HistoryItem struct {
 	Position          *Position
 }
 
-func (s *HistoryItem) CalculatorResult(name string) CalculatorResult {
-	item := s.CalculatorResults[name]
+func (s *HistoryItem) CalculatorResult(c Calculator) CalculatorResult {
+	item := s.CalculatorResults[c.GetName()]
 
 	return item
 }

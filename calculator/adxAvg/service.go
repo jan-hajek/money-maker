@@ -104,7 +104,7 @@ func (s *Service) countAvgTrueRangeDmPlusDmMinus(
 	dmMinusList := []float.Float{currentDmMinus}
 
 	for _, lastPeriodResult := range lastPeriodsResults {
-		values := lastPeriodResult.CalculatorResult(s.GetName()).(Result)
+		values := lastPeriodResult.CalculatorResult(s).(Result)
 		trueRangeList = append(trueRangeList, values.TrueRange)
 		dmPlusList = append(dmPlusList, values.DmPlus)
 		dmMinusList = append(dmMinusList, values.DmMinus)
@@ -128,7 +128,7 @@ func (s *Service) countAvgDIAbs(currentDIAbs float.Float, lastPeriodsResults []*
 	}
 
 	for _, lastPeriodResult := range lastPeriodsResults {
-		values := lastPeriodResult.CalculatorResult(s.GetName()).(Result)
+		values := lastPeriodResult.CalculatorResult(s).(Result)
 		DIAbsList = append(DIAbsList, values.DIAbs)
 	}
 

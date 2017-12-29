@@ -49,17 +49,17 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 
 	var currentAdx, lastAdx, DIPlus, DIMinus float64
 
-	sarValues := input.CalculatorResult(s.sar.GetName()).(sar.Result)
+	sarValues := input.CalculatorResult(s.sar).(sar.Result)
 	if s.config.SmoothType == AVG {
-		adxValues := input.CalculatorResult(s.adxAvg.GetName()).(adxAvg.Result)
-		lastAdx = lastItem.CalculatorResult(s.adxAvg.GetName()).(adxAvg.Result).Adx.Val()
+		adxValues := input.CalculatorResult(s.adxAvg).(adxAvg.Result)
+		lastAdx = lastItem.CalculatorResult(s.adxAvg).(adxAvg.Result).Adx.Val()
 
 		currentAdx = adxValues.Adx.Val()
 		DIPlus = adxValues.DIPlus.Val()
 		DIMinus = adxValues.DIMinus.Val()
 	} else {
-		adxValues := input.CalculatorResult(s.adxEma.GetName()).(adxEma.Result)
-		lastAdx = lastItem.CalculatorResult(s.adxEma.GetName()).(adxEma.Result).Adx.Val()
+		adxValues := input.CalculatorResult(s.adxEma).(adxEma.Result)
+		lastAdx = lastItem.CalculatorResult(s.adxEma).(adxEma.Result).Adx.Val()
 
 		currentAdx = adxValues.Adx.Val()
 		DIPlus = adxValues.DIPlus.Val()
@@ -68,7 +68,7 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 
 	currentSar := sarValues.Sar
 	currentSarVal := currentSar.Val()
-	lastSar := lastItem.CalculatorResult(s.sar.GetName()).(sar.Result).Sar
+	lastSar := lastItem.CalculatorResult(s.sar).(sar.Result).Sar
 	lastSarValue := lastSar.Val()
 
 	currentPrice := input.DateInput.ClosePrice.Val()

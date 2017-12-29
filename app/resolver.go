@@ -18,8 +18,8 @@ type StrategyInput struct {
 	Position          *Position
 }
 
-func (s *StrategyInput) CalculatorResult(name string) CalculatorResult {
-	return s.CalculatorResults[name]
+func (s *StrategyInput) CalculatorResult(c Calculator) CalculatorResult {
+	return s.CalculatorResults[c.GetName()]
 }
 
 type StrategyResult struct {
