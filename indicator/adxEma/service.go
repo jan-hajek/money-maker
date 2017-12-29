@@ -10,7 +10,7 @@ import (
 type Service struct {
 	Name   string
 	Period int
-	alpha  float.Float
+	Alpha  float.Float
 }
 
 func (s Service) Calculate(current app.IndicatorInput, history *app.History) app.IndicatorResult {
@@ -18,8 +18,6 @@ func (s Service) Calculate(current app.IndicatorInput, history *app.History) app
 	if current.Iteration == 1 {
 		return Result{}
 	}
-
-	s.alpha = float.New(1 / float64(s.Period))
 
 	period := s.Period
 
@@ -85,7 +83,7 @@ func (s Service) Calculate(current app.IndicatorInput, history *app.History) app
 		smmaDIAbs = s.countAvgDIAbs(DIAbs, lastPeriodItems)
 		// dalsi iterace uz se pocitaji prirustkem
 	} else {
-		smmaDIAbs = smooth.Ema(DIAbs, lastValues.SmmaDIAbs, s.alpha)
+		smmaDIAbs = smooth.Ema(DIAbs, lastValues.SmmaDIAbs, s.Alpha)
 	}
 
 	adx := smmaDIAbs.Multi(float.New(100.0))
@@ -156,9 +154,9 @@ func (s *Service) countAvgTrueRangeSmmaDmDIAbs(
 	trueRange, dmPlus, dmMinus float.Float,
 	lastValues Result,
 ) (float.Float, float.Float, float.Float) {
-	emaTrueRange := smooth.Ema(trueRange, lastValues.EmaTrueRange, s.alpha)
-	emaDmPlus := smooth.Ema(dmPlus, lastValues.EmaDmPlus, s.alpha)
-	emaDmMinus := smooth.Ema(dmMinus, lastValues.EmaDmMinus, s.alpha)
+	emaTrueRange := smooth.Ema(trueRange, lastValues.EmaTrueRange, s.Alpha)
+	emaDmPlus := smooth.Ema(dmPlus, lastValues.EmaDmPlus, s.Alpha)
+	emaDmMinus := smooth.Ema(dmMinus, lastValues.EmaDmMinus, s.Alpha)
 
 	return emaTrueRange, emaDmPlus, emaDmMinus
 }

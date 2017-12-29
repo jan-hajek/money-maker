@@ -170,7 +170,6 @@ func writerGetHistoryHeader(history *History) []string {
 	}
 
 	a = append(a,
-		"",
 		"type",
 		"id",
 		"type",

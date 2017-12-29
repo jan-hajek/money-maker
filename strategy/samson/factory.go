@@ -17,23 +17,24 @@ func (s *Factory) GetName() string {
 
 func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.StrategyFactoryConfig {
 	return Config{
-		SarMinimalAf: config["sarMinimalAf"]["default"].(float64),
-		SarMaximalAf: config["sarMaximalAf"]["default"].(float64),
+		SarMinimalAf: float.New(config["sarMinimalAf"]["default"].(float64)),
+		SarMaximalAf: float.New(config["sarMaximalAf"]["default"].(float64)),
 		AdxPeriod:    config["adxPeriod"]["default"].(int),
 		SmoothType:   SmoothType(config["smoothType"]["default"].(string)),
+		SmoothAlpha:  float.New(config["smoothAlpha"]["default"].(float64)),
 	}
 }
 
 func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []app.StrategyFactoryConfig {
 	sarMinValues := app.FloatSteps(
-		config["sarMinimalAf"]["minimal"].(float64),
-		config["sarMinimalAf"]["maximal"].(float64),
-		config["sarMinimalAf"]["step"].(float64),
+		float.New(config["sarMinimalAf"]["minimal"].(float64)),
+		float.New(config["sarMinimalAf"]["maximal"].(float64)),
+		float.New(config["sarMinimalAf"]["step"].(float64)),
 	)
 	sarMaxValues := app.FloatSteps(
-		config["sarMaximalAf"]["minimal"].(float64),
-		config["sarMaximalAf"]["maximal"].(float64),
-		config["sarMaximalAf"]["step"].(float64),
+		float.New(config["sarMaximalAf"]["minimal"].(float64)),
+		float.New(config["sarMaximalAf"]["maximal"].(float64)),
+		float.New(config["sarMaximalAf"]["step"].(float64)),
 	)
 	adxPeriodValues := app.IntSteps(
 		config["adxPeriod"]["minimal"].(int),
@@ -41,6 +42,11 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 		config["adxPeriod"]["step"].(int),
 	)
 	smoothTypes := []SmoothType{EMA, AVG}
+	smoothAlphaValues := app.FloatSteps(
+		float.New(config["smoothAlpha"]["minimal"].(float64)),
+		float.New(config["smoothAlpha"]["maximal"].(float64)),
+		float.New(config["smoothAlpha"]["step"].(float64)),
+	)
 
 	return app.Combinations(
 		[]int{
@@ -48,6 +54,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 			len(sarMaxValues),
 			len(adxPeriodValues),
 			len(smoothTypes),
+			len(smoothAlphaValues),
 		},
 		func(positions []int) app.StrategyFactoryConfig {
 			return Config{
@@ -55,6 +62,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 				SarMaximalAf: sarMaxValues[positions[1]],
 				AdxPeriod:    adxPeriodValues[positions[2]],
 				SmoothType:   smoothTypes[positions[3]],
+				SmoothAlpha:  smoothAlphaValues[positions[4]],
 			}
 		},
 	)
@@ -66,8 +74,8 @@ func (s *Factory) Create(config app.StrategyFactoryConfig) app.Strategy {
 		config: config.(Config),
 		sar: &sar.Service{
 			Name:      "sar",
-			MinimalAf: float.New(config.(Config).SarMinimalAf),
-			MaximalAf: float.New(config.(Config).SarMaximalAf),
+			MinimalAf: config.(Config).SarMinimalAf,
+			MaximalAf: config.(Config).SarMaximalAf,
 		},
 	}
 
@@ -82,6 +90,7 @@ func (s *Factory) Create(config app.StrategyFactoryConfig) app.Strategy {
 		service.adxEma = &adxEma.Service{
 			Name:   "adx",
 			Period: config.(Config).AdxPeriod,
+			Alpha:  config.(Config).SmoothAlpha,
 		}
 	}
 

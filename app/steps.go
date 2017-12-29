@@ -1,13 +1,14 @@
 package app
 
-import "github.com/jelito/money-maker/app/round"
+import (
+	"github.com/jelito/money-maker/app/float"
+)
 
-func FloatSteps(min, max, step float64) []float64 {
-	var results []float64
+func FloatSteps(min, max, step float.Float) []float.Float {
+	var results []float.Float
 
-	for x := min; x <= max; x += step {
-		x = round.Round(x, 3)
-		results = append(results, x)
+	for x := min.Val(); x <= max.Val(); x += step.Val() {
+		results = append(results, float.New(x))
 	}
 
 	return results

@@ -1,10 +1,13 @@
 package samson
 
+import "github.com/jelito/money-maker/app/float"
+
 type Config struct {
-	SarMinimalAf float64
-	SarMaximalAf float64
+	SarMinimalAf float.Float
+	SarMaximalAf float.Float
 	AdxPeriod    int
 	SmoothType   SmoothType
+	SmoothAlpha  float.Float
 }
 
 type SmoothType string
