@@ -18,6 +18,8 @@ func (s Service) Calculate(current app.IndicatorInput, history *app.History) app
 	if current.Iteration == 1 {
 		return Result{}
 	}
+	// FIXME - jhajek
+	s.Alpha = float.New(1.0 / float64(s.Period))
 
 	period := s.Period
 

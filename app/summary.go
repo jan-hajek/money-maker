@@ -36,5 +36,7 @@ func (s *Summary) FillFromHistory(history *History) {
 	s.AvgOfProfit = float.New(s.SumOfProfitable.Val() / float64(s.CountOfProfitable))
 	s.AvgOfLost = float.New(s.SumOfLossy.Val() / float64(s.CountOfLossy))
 	s.AvgOfPositions = float.New(s.Profit.Val() / float64(s.CountOfPositions))
-	s.SuccessRatio = int(float64(s.CountOfProfitable) / float64(s.CountOfPositions) * 100)
+	if s.CountOfPositions != 0 {
+		s.SuccessRatio = int(float64(s.CountOfProfitable) / float64(s.CountOfPositions) * 100)
+	}
 }

@@ -19,6 +19,9 @@ func (s *Service) GetPrintValues() []app.PrintValue {
 		{Label: "adxPeriod", Value: s.config.AdxPeriod},
 		{Label: "alpha", Value: s.config.SmoothAlpha},
 		{Label: "type", Value: s.config.SmoothType},
+		{Label: "adxValOL", Value: s.config.OpenLowerAdxVal},
+		{Label: "adxValOH", Value: s.config.OpenHigherAdxVal},
+		{Label: "adxValC", Value: s.config.CloseAdxVal},
 	}
 }
 
@@ -72,7 +75,7 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 	}
 
 	if input.Position == nil {
-		if currentAdx > 30 || (currentAdx >= 20 && currentAdx <= 30 && currentAdx > last3Adx) {
+		if currentAdx > float64(s.config.OpenHigherAdxVal) || (currentAdx >= float64(s.config.OpenLowerAdxVal) && currentAdx <= float64(s.config.OpenHigherAdxVal) && currentAdx > last3Adx) {
 			var positionType app.PositionType
 			if DIPlus > DIMinus {
 				positionType = app.LONG
@@ -85,13 +88,13 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 				return app.StrategyResult{
 					Action:       app.OPEN,
 					PositionType: positionType,
-					Amount:       float.New(100000 / input.DateInput.ClosePrice.Val()),
+					Amount:       float.New(100 / input.DateInput.ClosePrice.Val()),
 				}
 			}
 		}
 	} else {
 		if input.Position.Type == app.LONG {
-			if DIPlus < DIMinus {
+			if DIPlus < DIMinus || (currentAdx <= float64(s.config.CloseAdxVal) && currentAdx < last3Adx) {
 				return app.StrategyResult{
 					Action: app.CLOSE,
 				}
@@ -99,7 +102,7 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 		}
 
 		if input.Position.Type == app.SHORT {
-			if DIPlus > DIMinus {
+			if DIPlus > DIMinus || (currentAdx <= float64(s.config.CloseAdxVal) && currentAdx < last3Adx) {
 				return app.StrategyResult{
 					Action: app.CLOSE,
 				}

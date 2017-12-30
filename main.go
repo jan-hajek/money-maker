@@ -8,16 +8,17 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
-	"os"
 )
 
 func main() {
-	runType := os.Args[1]
 
-	config := flag.String("config", "./config.yml", "config file")
+	runType := flag.String("type", "", "[app, batch]")
+	config := flag.String("config", "", "config file")
 	flag.Parse()
 
 	var t app.Config
+
+	println(*config)
 
 	yamlFile, err := ioutil.ReadFile(*config)
 	if err != nil {
@@ -32,18 +33,18 @@ func main() {
 		Items: make(map[string]app.StrategyFactory),
 	}
 
-	samson := samson.Factory{}
-	rReg.Add(&samson)
+	samsonFactory := samson.Factory{}
+	rReg.Add(&samsonFactory)
 
-	jones := jones.Factory{}
-	rReg.Add(&jones)
+	jonesFactory := jones.Factory{}
+	rReg.Add(&jonesFactory)
 
-	switch runType {
+	switch *runType {
 	case "run":
 		app.App{t, &rReg}.Run()
 	case "batch":
 		app.App{t, &rReg}.Batch()
 	default:
-		panic("unknown param " + runType)
+		panic("unknown param " + *runType)
 	}
 }
