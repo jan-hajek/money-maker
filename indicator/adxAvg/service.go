@@ -7,9 +7,23 @@ import (
 	"math"
 )
 
+func New(name string, period int) *Service {
+	return &Service{
+		name, period,
+		smooth.NewSma(period),
+		smooth.NewSma(period),
+		smooth.NewSma(period),
+		smooth.NewSma(period),
+	}
+}
+
 type Service struct {
-	Name   string
-	Period int
+	name            string
+	period          int
+	trueRangeSmooth *smooth.SmaService
+	dmPlusSmooth    *smooth.SmaService
+	dmMinusSmooth   *smooth.SmaService
+	diAbsSmooth     *smooth.SmaService
 }
 
 func (s Service) Calculate(current app.IndicatorInput, history *app.History) app.IndicatorResult {
@@ -20,57 +34,62 @@ func (s Service) Calculate(current app.IndicatorInput, history *app.History) app
 		return result
 	}
 
-	period := s.Period
+	period := s.period
 
 	lastDay, _ := history.GetLastItem()
 	lastInput := lastDay.DateInput
 
-	trueRange, dmPlus, dmMinus := s.countDmPlusDmMinusTrueRange(current, lastInput)
-
-	result.TrueRange = trueRange
-	result.DmPlus = dmPlus
-	result.DmMinus = dmMinus
+	dmPlus, dmMinus := s.countDmPlusMinus(current, lastInput)
+	trueRange := s.countTrueRange(current, lastInput)
 
 	// ve 2. - 14. iteraci se jen ukladaji hodnoty
 	if current.Iteration <= period {
+		s.trueRangeSmooth.AddStartingValue(trueRange)
+		s.dmPlusSmooth.AddStartingValue(dmPlus)
+		s.dmMinusSmooth.AddStartingValue(dmMinus)
+
 		return result
 	}
 
-	lastPeriodItems := history.GetLastItems(period - 1)
+	// v 15. a dal zacinam pocitat true range, dm plus a minus
+	smaTrueRange, err := s.trueRangeSmooth.CountSmoothValue(trueRange)
+	smaDmPlus, _ := s.dmPlusSmooth.CountSmoothValue(dmPlus)
+	smaDmMinus, _ := s.dmMinusSmooth.CountSmoothValue(dmMinus)
+	if err != nil {
+		panic(err)
+	}
 
-	// od 15. iteraci spocitam prumery za poslednich 13 dni + aktualni
-	avgTrueRange, avgDmPlus, avgDmMinus := s.countAvgTrueRangeDmPlusDmMinus(trueRange, dmPlus, dmMinus, lastPeriodItems)
+	DIAbs, DIPlus, DIMinus := s.countDmDIAbs(smaTrueRange, smaDmPlus, smaDmMinus)
 
-	DIAbs, DIPlus, DIMinus := s.countDmDIAbs(avgTrueRange, avgDmPlus, avgDmMinus)
-
-	result.DIAbs = DIAbs
 	result.DIPlus = DIPlus
 	result.DIMinus = DIMinus
 
 	// v 16. - 28. (1 + 14 + 13) iteraci budu ukladat DIAbs
-	if current.Iteration <= 2*period {
+	if current.Iteration < 2*period {
+		s.diAbsSmooth.AddStartingValue(DIAbs)
+
 		return result
 	}
 
-	// od 29. (1 + 14 + 14) iteraci spocitam smmaDIAbs a ADX
-	avgDIAbs := s.countAvgDIAbs(DIAbs, lastPeriodItems)
+	emaDiAbs, err := s.diAbsSmooth.CountSmoothValue(DIAbs)
+	if err != nil {
+		panic(err)
+	}
 
-	adx := avgDIAbs.MultiFloat(100.0)
-
-	result.Adx = adx
+	result.Adx = emaDiAbs.MultiFloat(100.0)
 
 	return result
 }
 
 func (s Service) GetName() string {
-	return s.Name
+	return s.name
 }
 
-func (s *Service) countDmPlusDmMinusTrueRange(
+func (s *Service) countDmPlusMinus(
 	current app.IndicatorInput,
 	lastInput app.DateInput,
-) (float.Float, float.Float, float.Float) {
-	dmPlus, dmMinus, trueRange := float.New(0.0), float.New(0.0), float.New(0.0)
+) (float.Float, float.Float) {
+	dmPlus, dmMinus := float.New(0.0), float.New(0.0)
 
 	upMove := float.New(current.HighPrice.Val() - lastInput.HighPrice.Val())
 	downMove := float.New(lastInput.LowPrice.Val() - current.LowPrice.Val())
@@ -83,54 +102,24 @@ func (s *Service) countDmPlusDmMinusTrueRange(
 		dmMinus = downMove
 	}
 
-	trueRange = float.New(math.Max(
+	return dmPlus, dmMinus
+}
+
+func (s *Service) countTrueRange(current app.IndicatorInput, lastInput app.DateInput) float.Float {
+	return float.New(math.Max(
 		current.HighPrice.Val()-current.LowPrice.Val(),
 		math.Max(
 			math.Abs(current.HighPrice.Val()-lastInput.ClosePrice.Val()),
 			math.Abs(current.LowPrice.Val()-lastInput.ClosePrice.Val()),
 		),
 	))
-
-	return trueRange, dmPlus, dmMinus
 }
 
-func (s *Service) countAvgTrueRangeDmPlusDmMinus(
-	currentTrueRange, currentDmPlus, currentDmMinus float.Float,
-	lastPeriodsResults []*app.HistoryItem,
-) (float.Float, float.Float, float.Float) {
-
-	trueRangeList := []float.Float{currentTrueRange}
-	dmPlusList := []float.Float{currentDmPlus}
-	dmMinusList := []float.Float{currentDmMinus}
-
-	for _, lastPeriodResult := range lastPeriodsResults {
-		values := lastPeriodResult.IndicatorResult(s).(Result)
-		trueRangeList = append(trueRangeList, values.TrueRange)
-		dmPlusList = append(dmPlusList, values.DmPlus)
-		dmMinusList = append(dmMinusList, values.DmMinus)
-	}
-
-	return smooth.Avg(trueRangeList), smooth.Avg(dmPlusList), smooth.Avg(dmMinusList)
-}
-
-func (s *Service) countDmDIAbs(avgTrueRange, avgDmPlus, avgDmMinus float.Float) (float.Float, float.Float, float.Float) {
-	DIPlus := float.New((100.0 * avgDmPlus.Val()) / avgTrueRange.Val())
-	DIMinus := float.New((100.0 * avgDmMinus.Val()) / avgTrueRange.Val())
+func (s *Service) countDmDIAbs(smaTrueRange, smaDmPlus, smaDmMinus float.Float) (float.Float, float.Float, float.Float) {
+	DIPlus := float.New((100.0 * smaDmPlus.Val()) / smaTrueRange.Val())
+	DIMinus := float.New((100.0 * smaDmMinus.Val()) / smaTrueRange.Val())
 
 	DIAbs := float.New(math.Abs((DIPlus.Val() - DIMinus.Val()) / (DIPlus.Val() + DIMinus.Val())))
 
 	return DIAbs, DIPlus, DIMinus
-}
-
-func (s *Service) countAvgDIAbs(currentDIAbs float.Float, lastPeriodsResults []*app.HistoryItem) float.Float {
-	DIAbsList := []float.Float{
-		currentDIAbs,
-	}
-
-	for _, lastPeriodResult := range lastPeriodsResults {
-		values := lastPeriodResult.IndicatorResult(s).(Result)
-		DIAbsList = append(DIAbsList, values.DIAbs)
-	}
-
-	return smooth.Avg(DIAbsList)
 }

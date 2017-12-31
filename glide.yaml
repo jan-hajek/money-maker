@@ -1,6 +1,6 @@
 package: github.com/jelito/money-maker
 import:
 - package: gopkg.in/yaml.v2
-- package: gopkg.in/cheggaaa/pb.v1
-- package: github.com/mattn/go-runewidth
+- package: github.com/gosuri/uiprogress
+
 

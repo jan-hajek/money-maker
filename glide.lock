@@ -1,14 +1,18 @@
-hash: 2877b75b3b1c0f5330a523c2e3e0f0da33b15dc2fac09a488326cbdbdbe93d5c
-updated: 2017-12-31T12:23:15.0404208+01:00
+hash: ac91a7acbc9e1aecc24e3ab51189afa31603ec77e5071f703bd76ba3c7b8d866
+updated: 2017-12-31T20:15:31.6447678+01:00
 imports:
-- name: github.com/mattn/go-runewidth
-  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: github.com/gosuri/uilive
+  version: ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e
+- name: github.com/gosuri/uiprogress
+  version: d0567a9d84a1c40dd7568115ea66f4887bf57b33
+  subpackages:
+  - util/strutil
+- name: github.com/mattn/go-isatty
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
 - name: golang.org/x/sys
   version: dbc2be9168a660ef302e04b6ff6406de6f967473
   subpackages:
   - unix
-- name: gopkg.in/cheggaaa/pb.v1
-  version: 18d384da9bdc1e5a08fc2a62a494c321d9ae74ea
 - name: gopkg.in/yaml.v2
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports: []

@@ -6,13 +6,9 @@ import (
 )
 
 type Result struct {
-	Adx       float.Float
-	TrueRange float.Float
-	DmPlus    float.Float
-	DmMinus   float.Float
-	DIAbs     float.Float
-	DIPlus    float.Float
-	DIMinus   float.Float
+	Adx     float.Float
+	DIPlus  float.Float
+	DIMinus float.Float
 }
 
 func (s Result) Print() []app.PrintValue {

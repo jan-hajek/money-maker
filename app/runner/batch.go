@@ -1,8 +1,9 @@
 package runner
 
 import (
+	"fmt"
+	"github.com/gosuri/uiprogress"
 	"github.com/jelito/money-maker/app"
-	"gopkg.in/cheggaaa/pb.v1"
 	"log"
 )
 
@@ -19,7 +20,11 @@ func (s App) Batch() {
 		},
 	)
 
-	bar := pb.StartNew(len(strategies))
+	uiprogress.Start()
+	bar := uiprogress.AddBar(len(strategies)).AppendCompleted().AppendElapsed()
+	bar.PrependFunc(func(b *uiprogress.Bar) string {
+		return fmt.Sprintf("(%d/%d)", b.Current(), b.Total)
+	})
 
 	dateInputs, err := getDateInputs(s.Config.InputFile, s.Config.ParseFormat)
 	if err != nil {
@@ -46,12 +51,13 @@ func (s App) Batch() {
 		err = writer.WriteSummaryRow(summary)
 		if err != nil {
 			log.Fatal(err)
+
 		}
 
-		bar.Increment()
+		bar.Incr()
 	}
 
-	bar.Finish()
+	bar.AppendCompleted()
 
 	err = writer.Close()
 	if err != nil {

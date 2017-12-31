@@ -90,18 +90,18 @@ func (s *Factory) Create(config app.StrategyFactoryConfig) app.Strategy {
 	}
 
 	if service.config.SmoothType == AVG {
-		service.adxAvg = &adxAvg.Service{
-			Name:   "adx",
-			Period: config.(Config).AdxPeriod,
-		}
+		service.adxAvg = adxAvg.New(
+			"adx",
+			config.(Config).AdxPeriod,
+		)
 	}
 
 	if service.config.SmoothType == EMA {
-		service.adxEma = &adxEma.Service{
-			Name:   "adx",
-			Period: config.(Config).AdxPeriod,
-			Alpha:  config.(Config).SmoothAlpha,
-		}
+		service.adxEma = adxEma.New(
+			"adx",
+			config.(Config).AdxPeriod,
+			config.(Config).SmoothAlpha,
+		)
 	}
 
 	return service
