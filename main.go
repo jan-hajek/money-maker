@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/app/runner"
 	"github.com/jelito/money-maker/strategy/jones"
 	"github.com/jelito/money-maker/strategy/samson"
 	"gopkg.in/yaml.v2"
@@ -16,9 +17,7 @@ func main() {
 	config := flag.String("config", "", "config file")
 	flag.Parse()
 
-	var t app.Config
-
-	println(*config)
+	var t runner.Config
 
 	yamlFile, err := ioutil.ReadFile(*config)
 	if err != nil {
@@ -41,10 +40,10 @@ func main() {
 
 	switch *runType {
 	case "run":
-		app.App{t, &rReg}.Run()
+		runner.App{t, &rReg}.Run()
 	case "batch":
-		app.App{t, &rReg}.Batch()
+		runner.App{t, &rReg}.Batch()
 	default:
-		panic("unknown param " + *runType)
+		log.Fatal("unknown param " + *runType)
 	}
 }

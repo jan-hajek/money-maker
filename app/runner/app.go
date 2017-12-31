@@ -1,8 +1,10 @@
-package app
+package runner
+
+import "github.com/jelito/money-maker/app"
 
 type App struct {
 	Config                  Config
-	StrategyFactoryRegistry *StrategyFactoryRegistry
+	StrategyFactoryRegistry *app.StrategyFactoryRegistry
 }
 
 // FIXME - jhajek yzanoreni
@@ -13,44 +15,42 @@ type Config struct {
 	Strategies  map[string]map[string]map[string]interface{} `yaml:"strategies"`
 }
 
-func (s App) Run() {
+func (s *App) loadStrategies(
+	loadConfigFunc func(app.StrategyFactory, map[string]map[string]interface{}) []app.StrategyFactoryConfig,
+) []app.Strategy {
+	var strategies []app.Strategy
 
-	// FIXME - jhajek
-	var strategy Strategy
-
-	for strategyFactoryName, StrategyValues := range s.Config.Strategies {
+	for strategyFactoryName, strategyFactoryConfig := range s.Config.Strategies {
 		strategyFactory, err := s.StrategyFactoryRegistry.GetByName(strategyFactoryName)
 		if err != nil {
 			panic(err)
 		}
 
-		strategy = strategyFactory.Create(strategyFactory.GetDefaultConfig(StrategyValues))
+		for _, config := range loadConfigFunc(strategyFactory, strategyFactoryConfig) {
+			strategies = append(strategies, strategyFactory.Create(config))
+		}
 	}
+	return strategies
+}
 
-	dateInputs, err := getDateInputs(s.Config.InputFile, s.Config.ParseFormat)
-	if err != nil {
-		panic(err)
-	}
-
-	var lastPosition *Position
-
+func (s *App) runStrategy(strategy app.Strategy, dateInputs []app.DateInput) *app.History {
+	var lastPosition *app.Position
 	indicators := strategy.GetIndicators()
 
-	history := &History{
-		strategy:   strategy,
-		indicators: indicators,
+	history := &app.History{
+		Strategy:   strategy,
+		Indicators: indicators,
 	}
 
 	iteration := 0
 	for _, dateInput := range dateInputs {
 
-		indicatorResults := map[string]IndicatorResult{}
+		indicatorResults := map[string]app.IndicatorResult{}
 
 		iteration++
 
-		// FIXME - jhajek go rutiny
 		for _, c := range indicators {
-			input := IndicatorInput{
+			input := app.IndicatorInput{
 				Date:       dateInput.Date,
 				OpenPrice:  dateInput.OpenPrice,
 				HighPrice:  dateInput.HighPrice,
@@ -62,7 +62,7 @@ func (s App) Run() {
 			indicatorResults[c.GetName()] = c.Calculate(input, history)
 		}
 
-		strategyResult := strategy.Resolve(StrategyInput{
+		strategyResult := strategy.Resolve(app.StrategyInput{
 			DateInput:        dateInput,
 			History:          history,
 			Position:         lastPosition,
@@ -71,7 +71,7 @@ func (s App) Run() {
 
 		lastPosition = createPosition(strategyResult, dateInput, lastPosition)
 
-		historyItem := &HistoryItem{
+		historyItem := &app.HistoryItem{
 			DateInput:        dateInput,
 			IndicatorResults: indicatorResults,
 			StrategyResult:   strategyResult,
@@ -80,54 +80,31 @@ func (s App) Run() {
 
 		history.AddItem(historyItem)
 
-		if strategyResult.Action == CLOSE {
+		if strategyResult.Action == app.CLOSE {
 			lastPosition = nil
 		}
 	}
 
-	summary := Summary{}
-	summary.FillFromHistory(history)
-
-	writer := s.createWriter()
-
-	err = writer.Open()
-	if err != nil {
-		panic(err)
-	}
-
-	err = writer.WriteHistory(history)
-	if err != nil {
-		panic(err)
-	}
-
-	err = writer.WriteSummary([]*Summary{&summary})
-	if err != nil {
-		panic(err)
-	}
-
-	err = writer.Close()
-	if err != nil {
-		panic(err)
-	}
+	return history
 }
 
-func (s *App) createWriter() Writer {
-	var outputs []WriterOutput
+func (s *App) createWriter() app.Writer {
+	var outputs []app.WriterOutput
 
 	if value, ok := s.Config.Outputs["stdout"]; ok == true && value == true {
-		outputs = append(outputs, &StdOutWriterOutput{
+		outputs = append(outputs, &app.StdOutWriterOutput{
 			DateFormat: s.Config.ParseFormat,
 		})
 	}
 
 	if value, ok := s.Config.Outputs["csv"]; ok == true && value != "" {
-		outputs = append(outputs, &CsvWriterOutput{
+		outputs = append(outputs, &app.CsvWriterOutput{
 			File:       value.(string),
 			DateFormat: s.Config.ParseFormat,
 		})
 	}
 
-	return Writer{
-		outputs: outputs,
+	return app.Writer{
+		Outputs: outputs,
 	}
 }

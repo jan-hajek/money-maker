@@ -10,11 +10,11 @@ import (
 )
 
 type Writer struct {
-	outputs []WriterOutput
+	Outputs []WriterOutput
 }
 
 func (s *Writer) Open() error {
-	for _, output := range s.outputs {
+	for _, output := range s.Outputs {
 		err := output.Open()
 		if err != nil {
 			return err
@@ -25,7 +25,7 @@ func (s *Writer) Open() error {
 }
 
 func (s *Writer) WriteHistory(history *History) error {
-	for _, output := range s.outputs {
+	for _, output := range s.Outputs {
 		err := output.WriteHistory(history)
 		if err != nil {
 			return err
@@ -35,9 +35,20 @@ func (s *Writer) WriteHistory(history *History) error {
 	return nil
 }
 
-func (s *Writer) WriteSummary(summaryList []*Summary) error {
-	for _, output := range s.outputs {
-		err := output.WriteSummary(summaryList)
+func (s *Writer) WriteSummaryHeader(summary *Summary) error {
+	for _, output := range s.Outputs {
+		err := output.WriteSummaryHeader(summary)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Writer) WriteSummaryRow(summary *Summary) error {
+	for _, output := range s.Outputs {
+		err := output.WriteSummaryRow(summary)
 		if err != nil {
 			return err
 		}
@@ -47,7 +58,7 @@ func (s *Writer) WriteSummary(summaryList []*Summary) error {
 }
 
 func (s *Writer) Close() error {
-	for _, output := range s.outputs {
+	for _, output := range s.Outputs {
 		err := output.Close()
 		if err != nil {
 			return err
@@ -60,7 +71,8 @@ func (s *Writer) Close() error {
 type WriterOutput interface {
 	Open() error
 	WriteHistory(history *History) error
-	WriteSummary(summaryList []*Summary) error
+	WriteSummaryHeader(summary *Summary) error
+	WriteSummaryRow(summary *Summary) error
 	Close() error
 }
 
@@ -77,22 +89,20 @@ func (s *StdOutWriterOutput) Open() error {
 
 func (s *StdOutWriterOutput) WriteHistory(history *History) error {
 	s.write(s.w, writerGetHistoryHeader(history)...)
-
 	for _, item := range history.GetAll() {
 		s.write(s.w, writerGetHistoryRow(item, s.DateFormat)...)
 	}
+	return nil
+}
+
+func (s *StdOutWriterOutput) WriteSummaryHeader(summary *Summary) error {
+	s.write(s.w, writerGetSummaryHeader(summary)...)
 
 	return nil
 }
 
-func (s *StdOutWriterOutput) WriteSummary(summaryList []*Summary) error {
-	if len(summaryList) == 0 {
-		return nil
-	}
-	s.write(s.w, writerGetSummaryHeader(summaryList[0])...)
-	for _, summary := range summaryList {
-		s.write(s.w, writerGetSummaryRow(summary)...)
-	}
+func (s *StdOutWriterOutput) WriteSummaryRow(summary *Summary) error {
+	s.write(s.w, writerGetSummaryRow(summary)...)
 	return nil
 }
 
@@ -129,25 +139,26 @@ func (s *CsvWriterOutput) Open() error {
 }
 
 func (s *CsvWriterOutput) WriteHistory(history *History) error {
-
-	s.writer.Write(writerGetHistoryHeader(history))
-
+	err := s.writer.Write(writerGetHistoryHeader(history))
+	if err != nil {
+		return err
+	}
 	for _, item := range history.GetAll() {
-		s.writer.Write(writerGetHistoryRow(item, s.DateFormat))
+		err = s.writer.Write(writerGetHistoryRow(item, s.DateFormat))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (s *CsvWriterOutput) WriteSummary(summaryList []*Summary) error {
-	if len(summaryList) == 0 {
-		return nil
-	}
-	s.writer.Write(writerGetSummaryHeader(summaryList[0]))
-	for _, summary := range summaryList {
-		s.writer.Write(writerGetSummaryRow(summary))
-	}
-	return nil
+func (s *CsvWriterOutput) WriteSummaryHeader(summary *Summary) error {
+	return s.writer.Write(writerGetSummaryHeader(summary))
+}
+
+func (s *CsvWriterOutput) WriteSummaryRow(summary *Summary) error {
+	return s.writer.Write(writerGetSummaryRow(summary))
 }
 
 func (s *CsvWriterOutput) Close() error {

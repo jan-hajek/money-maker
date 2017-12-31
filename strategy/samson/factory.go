@@ -41,7 +41,12 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 		config["adxPeriod"]["maximal"].(int),
 		config["adxPeriod"]["step"].(int),
 	)
-	smoothTypes := []SmoothType{EMA, AVG}
+
+	var smoothTypes []SmoothType
+	for _, smoothType := range config["smoothType"]["list"].([]interface{}) {
+		smoothTypes = append(smoothTypes, SmoothType(smoothType.(string)))
+	}
+
 	smoothAlphaValues := app.FloatSteps(
 		float.New(config["smoothAlpha"]["minimal"].(float64)),
 		float.New(config["smoothAlpha"]["maximal"].(float64)),

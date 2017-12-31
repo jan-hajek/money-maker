@@ -1,6 +1,14 @@
-hash: 9a4f635e9f8c190261aa8f7a10a996ddc10e133390fba3b01f29c35c634b94e5
-updated: 2017-12-23T23:33:13.6867742+01:00
+hash: 2877b75b3b1c0f5330a523c2e3e0f0da33b15dc2fac09a488326cbdbdbe93d5c
+updated: 2017-12-31T12:23:15.0404208+01:00
 imports:
+- name: github.com/mattn/go-runewidth
+  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: golang.org/x/sys
+  version: dbc2be9168a660ef302e04b6ff6406de6f967473
+  subpackages:
+  - unix
+- name: gopkg.in/cheggaaa/pb.v1
+  version: 18d384da9bdc1e5a08fc2a62a494c321d9ae74ea
 - name: gopkg.in/yaml.v2
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports: []

@@ -16,8 +16,10 @@ type Summary struct {
 	SuccessRatio        int
 }
 
-func (s *Summary) FillFromHistory(history *History) {
-	s.StrategyPrintValues = history.strategy.GetPrintValues()
+func CreateSummary(history *History) *Summary {
+	s := &Summary{}
+
+	s.StrategyPrintValues = history.Strategy.GetPrintValues()
 
 	for _, item := range history.GetAll() {
 		if item.StrategyResult.Action == CLOSE {
@@ -39,4 +41,6 @@ func (s *Summary) FillFromHistory(history *History) {
 	if s.CountOfPositions != 0 {
 		s.SuccessRatio = int(float64(s.CountOfProfitable) / float64(s.CountOfPositions) * 100)
 	}
+
+	return s
 }

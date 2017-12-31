@@ -1,7 +1,8 @@
-package app
+package runner
 
 import (
 	"encoding/csv"
+	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
 	"io"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func getDateInputs(inputFilePath, parseFormat string) ([]DateInput, error) {
+func getDateInputs(inputFilePath, parseFormat string) ([]app.DateInput, error) {
 
 	file, err := os.Open(inputFilePath)
 	if err != nil {
@@ -19,7 +20,7 @@ func getDateInputs(inputFilePath, parseFormat string) ([]DateInput, error) {
 	reader := csv.NewReader(file)
 	reader.Comma = ';'
 
-	var data []DateInput
+	var data []app.DateInput
 
 	lineCount := 0
 	for {
@@ -57,7 +58,7 @@ func getDateInputs(inputFilePath, parseFormat string) ([]DateInput, error) {
 			return nil, err
 		}
 
-		data = append(data, DateInput{
+		data = append(data, app.DateInput{
 			Date:       date,
 			OpenPrice:  float.New(openPrice),
 			ClosePrice: float.New(closePrice),

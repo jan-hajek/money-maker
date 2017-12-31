@@ -6,8 +6,8 @@ import (
 )
 
 type History struct {
-	strategy   Strategy
-	indicators []Indicator
+	Strategy   Strategy
+	Indicators []Indicator
 	items      []*HistoryItem
 }
 
