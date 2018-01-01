@@ -9,9 +9,11 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"runtime"
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	runType := flag.String("type", "", "[app, batch]")
 	config := flag.String("config", "", "config file")

@@ -37,27 +37,49 @@ func (s App) Batch() {
 		log.Fatal(err)
 	}
 
-	for index, strategy := range strategies {
-		history := s.runStrategy(strategy, dateInputs)
-		summary := app.CreateSummary(history)
+	ch := make(chan *app.Summary)
+	x := make(chan int, 8)
+	wait := make(chan bool)
 
-		if index == 0 {
-			err = writer.WriteSummaryHeader(summary)
+	go func() {
+		for i := 0; i < len(strategies); i++ {
+			summary := <-ch
+			<-x
+
+			if i == 1 {
+
+				err = writer.WriteSummaryHeader(summary)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			err = writer.WriteSummaryRow(summary)
 			if err != nil {
 				log.Fatal(err)
+
 			}
+
+			bar.Incr()
 		}
 
-		err = writer.WriteSummaryRow(summary)
-		if err != nil {
-			log.Fatal(err)
+		uiprogress.Stop()
 
-		}
+		wait <- true
+	}()
 
-		bar.Incr()
+	for index, strategy := range strategies {
+		go func(index int, strategy app.Strategy) {
+			history := s.runStrategy(strategy, dateInputs)
+
+			ch <- app.CreateSummary(history)
+		}(index, strategy)
+
+		x <- index
+
 	}
 
-	bar.AppendCompleted()
+	<-wait
 
 	err = writer.Close()
 	if err != nil {
