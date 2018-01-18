@@ -18,7 +18,7 @@ func (s *History) AddItem(result *HistoryItem) {
 func (s *History) GetLastItems(numOfLast int) []*HistoryItem {
 	count := len(s.items)
 	if numOfLast < count {
-		return s.items[count-numOfLast : count]
+		return s.items[count-numOfLast:]
 	} else {
 		return s.items
 	}

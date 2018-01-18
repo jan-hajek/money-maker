@@ -13,6 +13,7 @@ type Summary struct {
 	SumOfProfitable     float.Float
 	SumOfLossy          float.Float
 	Profit              float.Float
+	GrossProfit         float.Float
 	SuccessRatio        int
 }
 
@@ -23,13 +24,14 @@ func CreateSummary(history *History) *Summary {
 
 	for _, item := range history.GetAll() {
 		if item.StrategyResult.Action == CLOSE {
-			if item.Position.Profit.Val() > 0.0 {
+			if item.Position.Profit.Val()-item.Position.Costs.Val() > 0.0 {
 				s.CountOfProfitable++
-				s.SumOfProfitable = float.New(s.SumOfProfitable.Val() + item.Position.Profit.Val())
+				s.SumOfProfitable = float.New(s.SumOfProfitable.Val() + item.Position.Profit.Val() - item.Position.Costs.Val())
 			} else {
 				s.CountOfLossy++
-				s.SumOfLossy = float.New(s.SumOfLossy.Val() + item.Position.Profit.Val())
+				s.SumOfLossy = float.New(s.SumOfLossy.Val() + item.Position.Profit.Val() - item.Position.Costs.Val())
 			}
+			s.GrossProfit = float.New(s.GrossProfit.Val() + item.Position.Profit.Val())
 		}
 	}
 

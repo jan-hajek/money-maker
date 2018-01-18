@@ -74,7 +74,7 @@ func calculateProfit(position *app.Position) float.Float {
 		profit *= -1
 	}
 
-	return float.New(profit - position.Costs.Val())
+	return float.New(profit)
 }
 
 func calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
@@ -83,5 +83,5 @@ func calculatePossibleProfit(position *app.Position, actualPrice float.Float) fl
 		profit *= -1
 	}
 
-	return float.New(profit - position.Costs.Val())
+	return float.New(profit)
 }

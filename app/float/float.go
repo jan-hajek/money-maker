@@ -6,7 +6,7 @@ import (
 
 func New(value float64) Float {
 	return Float{
-		value: round.Round(value, 3),
+		value: round.Round(value, 9),
 	}
 }
 

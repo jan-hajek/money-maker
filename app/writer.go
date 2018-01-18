@@ -235,6 +235,7 @@ func writerGetSummaryHeader(summary *Summary) []string {
 		"Profit",
 		"Sum Profitable",
 		"Sum Lossy",
+		"GrossProfit",
 		"Ratio(%)",
 		"Positions(+/-)",
 		"Avg Positions",
@@ -253,6 +254,7 @@ func writerGetSummaryRow(summary *Summary) []string {
 		formatValue(summary.Profit),
 		formatValue(summary.SumOfProfitable),
 		formatValue(summary.SumOfLossy),
+		formatValue(summary.GrossProfit),
 		formatValue(summary.SuccessRatio),
 		formatValue(summary.CountOfPositions)+"("+
 			formatValue(summary.CountOfProfitable)+"/"+

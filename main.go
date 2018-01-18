@@ -5,6 +5,7 @@ import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/runner"
 	"github.com/jelito/money-maker/strategy/jones"
+	"github.com/jelito/money-maker/strategy/jones2"
 	"github.com/jelito/money-maker/strategy/samson"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -39,6 +40,9 @@ func main() {
 
 	jonesFactory := jones.Factory{}
 	rReg.Add(&jonesFactory)
+
+	jones2Factory := jones2.Factory{}
+	rReg.Add(&jones2Factory)
 
 	switch *runType {
 	case "run":
