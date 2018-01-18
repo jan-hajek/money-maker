@@ -13,6 +13,7 @@ import (
 	"github.com/jelito/money-maker/app/runner/run"
 	appTrade "github.com/jelito/money-maker/app/trade"
 	"github.com/jelito/money-maker/strategy/jones"
+	"github.com/jelito/money-maker/strategy/jones2"
 	"github.com/jelito/money-maker/strategy/samson"
 	"github.com/jelito/money-maker/title/btc"
 	"github.com/rifflock/lfshook"
@@ -63,9 +64,6 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	}
 	reg.Add("db", db)
 
-	reg.Add("strategy/samson", &samson.Factory{})
-	reg.Add("strategy/jones", &jones.Factory{})
-	reg.Add("title/btc", &btc.Factory{})
 	reg.Add("app/repository/trade", &trade.Service{Db: db})
 	reg.Add("app/repository/title", &title.Service{Db: db})
 	reg.Add("app/repository/price", &price.Service{Db: db})
@@ -98,6 +96,11 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 		Mailer:                reg.GetByName("app/mailer").(*mailer.Service),
 		DownloadMissingPrices: c.DownloadMissingPrices,
 	})
+
+	reg.Add("strategy/samson", &samson.Factory{})
+	reg.Add("strategy/jones", &jones.Factory{})
+	reg.Add("strategy/jones2", &jones2.Factory{})
+	reg.Add("title/btc", &btc.Factory{})
 
 	return reg
 }
