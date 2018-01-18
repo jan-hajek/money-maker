@@ -2,5 +2,7 @@ package: github.com/jelito/money-maker
 import:
 - package: gopkg.in/yaml.v2
 - package: github.com/gosuri/uiprogress
-
-
+- package: github.com/go-sql-driver/mysql
+- package: github.com/satori/go.uuid
+- package: github.com/sirupsen/logrus
+- package: github.com/rifflock/lfshook

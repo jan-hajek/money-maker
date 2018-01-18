@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (s App) Run() {
+func (s App) RunOne() {
 
 	strategies := s.loadStrategies(
 		func(
@@ -19,6 +19,7 @@ func (s App) Run() {
 		},
 	)
 
+	// TODO - jhajek logger
 	log.Println("strategies: ", len(strategies))
 
 	dateInputs, err := getDateInputs(s.Config.InputFile, s.Config.ParseFormat)

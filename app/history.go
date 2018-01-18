@@ -15,6 +15,7 @@ func (s *History) AddItem(result *HistoryItem) {
 	s.items = append(s.items, result)
 }
 
+// TODO - jhajek error
 func (s *History) GetLastItems(numOfLast int) []*HistoryItem {
 	count := len(s.items)
 	if numOfLast < count {
@@ -35,6 +36,16 @@ func (s *History) GetLastItem() (*HistoryItem, error) {
 
 func (s *History) GetAll() []*HistoryItem {
 	return s.items
+}
+
+func (s *History) SetLastPosition(position *Position) error {
+	last, err := s.GetLastItem()
+	if err != nil {
+		return err
+	}
+	last.Position = position
+
+	return nil
 }
 
 type HistoryItem struct {

@@ -11,10 +11,6 @@ import (
 type Factory struct {
 }
 
-func (s *Factory) GetName() string {
-	return "samson"
-}
-
 func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.StrategyFactoryConfig {
 	return Config{
 		SarMinimalAf: float.New(config["sarMinimalAf"]["default"].(float64)),

@@ -16,7 +16,7 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 		}
 		lastPositionId++
 		newPosition := &app.Position{
-			Id:        lastPositionId,
+			Id:        string(lastPositionId),
 			Type:      strategyResult.PositionType,
 			StartDate: dateInput.Date,
 			OpenPrice: dateInput.ClosePrice,

@@ -86,5 +86,6 @@ func (s App) Batch() {
 		log.Fatal(err)
 	}
 
+	// TODO - jhajek logger
 	log.Println("done")
 }

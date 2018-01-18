@@ -33,7 +33,7 @@ func (s *SmaService) CountSmoothValue(current float.Float) (float.Float, error) 
 	if len(s.values) == s.startLimit {
 		avg := Avg(s.values)
 
-		// FIXME - jhajek leak
+		// TODO - jhajek leak
 		s.values = s.values[1:]
 
 		return avg, nil

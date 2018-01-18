@@ -6,7 +6,7 @@ import (
 )
 
 type Position struct {
-	Id             int
+	Id             string
 	Type           PositionType
 	StartDate      time.Time
 	CloseDate      time.Time

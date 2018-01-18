@@ -2,13 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/jelito/money-maker/app"
-	"github.com/jelito/money-maker/app/runner"
-	"github.com/jelito/money-maker/strategy/jones"
-	"github.com/jelito/money-maker/strategy/jones2"
-	"github.com/jelito/money-maker/strategy/samson"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"github.com/jelito/money-maker/app/cmd/run"
 	"log"
 	"runtime"
 )
@@ -16,39 +10,14 @@ import (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	runType := flag.String("type", "", "[app, batch]")
+	runType := flag.String("type", "", "[run, app, batch]")
 	config := flag.String("config", "", "config file")
 	flag.Parse()
 
-	var t runner.Config
-
-	yamlFile, err := ioutil.ReadFile(*config)
-	if err != nil {
-		log.Printf("yamlFile.Get err   #%v ", err)
-	}
-	err = yaml.Unmarshal(yamlFile, &t)
-	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
-	}
-
-	rReg := app.StrategyFactoryRegistry{
-		Items: make(map[string]app.StrategyFactory),
-	}
-
-	samsonFactory := samson.Factory{}
-	rReg.Add(&samsonFactory)
-
-	jonesFactory := jones.Factory{}
-	rReg.Add(&jonesFactory)
-
-	jones2Factory := jones2.Factory{}
-	rReg.Add(&jones2Factory)
-
 	switch *runType {
 	case "run":
-		runner.App{t, &rReg}.Run()
-	case "batch":
-		runner.App{t, &rReg}.Batch()
+		s := &run.Service{}
+		s.Run(config)
 	default:
 		log.Fatal("unknown param " + *runType)
 	}

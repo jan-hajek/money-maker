@@ -10,18 +10,14 @@ import (
 type Factory struct {
 }
 
-func (s *Factory) GetName() string {
-	return "jones"
-}
-
 func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.StrategyFactoryConfig {
 	return Config{
-		AdxPeriod:        config["adxPeriod"]["default"].(int),
+		AdxPeriod:        int(config["adxPeriod"]["default"].(float64)),
 		SmoothType:       SmoothType(config["smoothType"]["default"].(string)),
 		SmoothAlpha:      float.New(config["smoothAlpha"]["default"].(float64)),
-		OpenLowerAdxVal:  config["openLowerAdxVal"]["default"].(int),
-		OpenHigherAdxVal: config["openHigherAdxVal"]["default"].(int),
-		CloseAdxVal:      config["closeAdxVal"]["default"].(int),
+		OpenLowerAdxVal:  int(config["openLowerAdxVal"]["default"].(float64)),
+		OpenHigherAdxVal: int(config["openHigherAdxVal"]["default"].(float64)),
+		CloseAdxVal:      int(config["closeAdxVal"]["default"].(float64)),
 	}
 }
 

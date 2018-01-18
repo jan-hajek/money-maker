@@ -1,13 +1,16 @@
 package runner
 
-import "github.com/jelito/money-maker/app"
+import (
+	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/app/registry"
+)
 
 type App struct {
-	Config                  Config
-	StrategyFactoryRegistry *app.StrategyFactoryRegistry
+	Config   Config
+	Registry *registry.Registry
 }
 
-// FIXME - jhajek yzanoreni
+// TODO - jhajek yzanoreni
 type Config struct {
 	InputFile   string                                       `yaml:"input"`
 	ParseFormat string                                       `yaml:"parseFormat"`
@@ -21,10 +24,7 @@ func (s *App) loadStrategies(
 	var strategies []app.Strategy
 
 	for strategyFactoryName, strategyFactoryConfig := range s.Config.Strategies {
-		strategyFactory, err := s.StrategyFactoryRegistry.GetByName(strategyFactoryName)
-		if err != nil {
-			panic(err)
-		}
+		strategyFactory := s.Registry.GetByName(strategyFactoryName).(app.StrategyFactory)
 
 		for _, config := range loadConfigFunc(strategyFactory, strategyFactoryConfig) {
 			strategies = append(strategies, strategyFactory.Create(config))

@@ -24,9 +24,9 @@ func (s *Writer) Open() error {
 	return nil
 }
 
-func (s *Writer) WriteHistory(history *History) error {
+func (s *Writer) WriteHistory(historyItems []*HistoryItem) error {
 	for _, output := range s.Outputs {
-		err := output.WriteHistory(history)
+		err := output.WriteHistory(historyItems)
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (s *Writer) Close() error {
 
 type WriterOutput interface {
 	Open() error
-	WriteHistory(history *History) error
+	WriteHistory(historyItems []*HistoryItem) error
 	WriteSummaryHeader(summary *Summary) error
 	WriteSummaryRow(summary *Summary) error
 	Close() error
@@ -87,9 +87,12 @@ func (s *StdOutWriterOutput) Open() error {
 	return nil
 }
 
-func (s *StdOutWriterOutput) WriteHistory(history *History) error {
-	s.write(s.w, writerGetHistoryHeader(history)...)
-	for _, item := range history.GetAll() {
+func (s *StdOutWriterOutput) WriteHistory(historyItems []*HistoryItem) error {
+	if len(historyItems) == 0 {
+		return nil
+	}
+	s.write(s.w, writerGetHistoryHeader(historyItems[0])...)
+	for _, item := range historyItems {
 		s.write(s.w, writerGetHistoryRow(item, s.DateFormat)...)
 	}
 	return nil
@@ -127,7 +130,7 @@ type CsvWriterOutput struct {
 
 func (s *CsvWriterOutput) Open() error {
 	var err error
-	s.file, err = os.Create(s.File)
+	s.file, err = os.OpenFile(s.File, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}
@@ -138,12 +141,15 @@ func (s *CsvWriterOutput) Open() error {
 	return err
 }
 
-func (s *CsvWriterOutput) WriteHistory(history *History) error {
-	err := s.writer.Write(writerGetHistoryHeader(history))
+func (s *CsvWriterOutput) WriteHistory(historyItems []*HistoryItem) error {
+	if len(historyItems) == 0 {
+		return nil
+	}
+	err := s.writer.Write(writerGetHistoryHeader(historyItems[0]))
 	if err != nil {
 		return err
 	}
-	for _, item := range history.GetAll() {
+	for _, item := range historyItems {
 		err = s.writer.Write(writerGetHistoryRow(item, s.DateFormat))
 		if err != nil {
 			return err
@@ -166,17 +172,15 @@ func (s *CsvWriterOutput) Close() error {
 	return s.file.Close()
 }
 
-func writerGetHistoryHeader(history *History) []string {
+func writerGetHistoryHeader(item *HistoryItem) []string {
 	a := []string{
 		"date",
 		"price",
 	}
 
-	for _, item := range history.GetLastItems(1) {
-		for _, indicatorResult := range item.OrderedIndicatorResults() {
-			for _, param := range indicatorResult.Print() {
-				a = append(a, param.Label)
-			}
+	for _, indicatorResult := range item.OrderedIndicatorResults() {
+		for _, param := range indicatorResult.Print() {
+			a = append(a, param.Label)
 		}
 	}
 
