@@ -1,4 +1,4 @@
-package btc
+package admiralMarkets
 
 import "github.com/jelito/money-maker/app/interfaces"
 

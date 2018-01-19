@@ -15,7 +15,7 @@ import (
 	"github.com/jelito/money-maker/strategy/jones"
 	"github.com/jelito/money-maker/strategy/jones2"
 	"github.com/jelito/money-maker/strategy/samson"
-	"github.com/jelito/money-maker/title/btc"
+	"github.com/jelito/money-maker/title/admiralMarkets"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -100,7 +100,7 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	reg.Add("strategy/samson", &samson.Factory{})
 	reg.Add("strategy/jones", &jones.Factory{})
 	reg.Add("strategy/jones2", &jones2.Factory{})
-	reg.Add("title/btc", &btc.Factory{})
+	reg.Add("title/btc", &admiralMarkets.Factory{})
 
 	return reg
 }

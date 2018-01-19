@@ -9,6 +9,6 @@ type TitleFactory interface {
 }
 
 type TitleService interface {
-	LoadLast() app.DateInput
-	LoadDataFrom() []app.DateInput
+	LoadLast() (app.DateInput, error)
+	LoadDataFrom() ([]app.DateInput, error)
 }

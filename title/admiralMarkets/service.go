@@ -1,11 +1,12 @@
-package btc
+package admiralMarkets
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/app/entity"
 	"github.com/jelito/money-maker/app/float"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -22,10 +23,14 @@ type JsonLine struct {
 }
 
 type Service struct {
+	titleEntity *entity.Title
 }
 
-func (s *Service) LoadLast() app.DateInput {
-	jsonLines := s.load()
+func (s *Service) LoadLast() (app.DateInput, error) {
+	jsonLines, err := s.load(s.titleEntity.DataUrl)
+	if err != nil {
+		return app.DateInput{}, err
+	}
 	lastResult := jsonLines[len(jsonLines)-1]
 
 	return app.DateInput{
@@ -34,12 +39,14 @@ func (s *Service) LoadLast() app.DateInput {
 		HighPrice:  float.New(lastResult.High),
 		LowPrice:   float.New(lastResult.Low),
 		ClosePrice: float.New(lastResult.Close),
-	}
+	}, nil
 }
 
-func (s *Service) LoadDataFrom() []app.DateInput {
-	jsonLines := s.load()
-
+func (s *Service) LoadDataFrom() ([]app.DateInput, error) {
+	jsonLines, err := s.load(s.titleEntity.BatchDataUrl)
+	if err != nil {
+		return nil, err
+	}
 	a := make([]app.DateInput, 0)
 
 	for _, line := range jsonLines {
@@ -52,36 +59,34 @@ func (s *Service) LoadDataFrom() []app.DateInput {
 		})
 	}
 
-	return a
+	return a, nil
 }
 
-func (s *Service) load() []JsonLine {
-	url := "https://admiralmarkets.com/api/ajax/ticks_cfd?name=BTCUSD&range=day&period=60"
-
+func (s *Service) load(url string) ([]JsonLine, error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	res, getErr := client.Do(req)
 	if getErr != nil {
-		log.Fatal(getErr)
+		return nil, err
 	}
 
 	body, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
-		log.Fatal(readErr)
+		return nil, err
 	}
 
 	jsonLines := make([]JsonLine, 0)
 	jsonErr := json.Unmarshal(body, &jsonLines)
 	if jsonErr != nil {
-		log.Fatal(jsonErr, "---"+string(body)+"---")
+		return nil, errors.New(string(body))
 	}
 
-	return jsonLines
+	return jsonLines, nil
 }

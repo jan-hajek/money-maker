@@ -46,7 +46,7 @@ func (s *Service) Run() {
 
 		duration := time.Second * time.Duration(t.DownloadInterval)
 		ticker := time.NewTicker(duration)
-		s.Log.WithField("title", t.Id).WithField("duration", duration.String()).Info("start watching title")
+		s.Log.WithField("title", t.Name).WithField("duration", duration.String()).Info("start watching title")
 
 		go func() {
 			for range ticker.C {
@@ -63,56 +63,60 @@ func (s *Service) runTitleCron(
 	t *entity.Title,
 	tradesPerTitle map[string][]*appTrade.Service,
 ) {
-	s.Log.WithField("title", t.Id).Info("download price")
+	titleLog := s.Log.WithField("title", t.Name)
+	titleLog.Info("download price")
 
-	dateInput := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadLast()
+	dateInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadLast()
+	if err != nil {
+		titleLog.Error(err)
+	}
 
 	exists, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
 	if err != nil {
-		s.Log.WithField("title", t.Id).Fatal(err)
+		titleLog.Error(err)
 	}
 
 	if exists != nil {
-		s.Log.WithField("title", t.Id).Info("price not change")
+		titleLog.Info("price not change")
 		return
 	}
 
-	s.Log.WithField("title", t.Id).Info("save price to db")
+	titleLog.Info("save price to db")
 	s.savePriceToDb(t, dateInput)
 
 	if trades, exists := tradesPerTitle[t.Id]; exists {
 		// TODO - jhajek routines
 		for _, tr := range trades {
-			l := s.Log.WithField("trade", tr.Trade.Id)
+			tradeLog := titleLog.WithField("trade", tr.Trade.Id)
 
 			history, err := tr.Run(dateInput)
 			if err != nil {
-				l.Error(err)
+				tradeLog.Error(err)
 			}
 
 			lastHistoryItems := history.GetLastItems(2)
 
 			if lastHistoryItems[0].Position == nil {
-				l.Info("no last position")
+				tradeLog.Info("no last position")
 			} else {
-				l.
+				tradeLog.
 					WithField("lastPosition", lastHistoryItems[0].Position.Id).
 					Info("use last position")
 			}
 
-			l.
+			tradeLog.
 				WithField("action", lastHistoryItems[1].StrategyResult.Action).
 				WithField("type", lastHistoryItems[1].StrategyResult.PositionType).
 				Info("strategy result")
 
 			err = s.Writer.Open()
 			if err != nil {
-				l.Fatal(err)
+				tradeLog.Error(err)
 			}
 			s.Writer.WriteHistory(lastHistoryItems)
 			err = s.Writer.Close()
 			if err != nil {
-				l.Fatal(err)
+				tradeLog.Error(err)
 			}
 
 			s.Log.Info("----------------")
@@ -146,10 +150,13 @@ func (s *Service) getTitles() []*entity.Title {
 }
 
 func (s *Service) downloadMissingPrices(t *entity.Title) {
-	s.Log.WithField("title", t.Id).Info("load missing prices")
+	s.Log.WithField("title", t.Name).Info("load missing prices")
 
 	if s.DownloadMissingPrices {
-		dateInputs := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadDataFrom()
+		dateInputs, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadDataFrom()
+		if err != nil {
+			s.Log.WithField("title", t.Name).Error(err)
+		}
 
 		for _, dateInput := range dateInputs {
 			s.savePriceToDb(t, dateInput)
@@ -167,12 +174,12 @@ func (s *Service) warmUpTrades(
 
 	if len(lastPrices) != limit {
 		s.Log.
-			WithField("title", t.Id).
+			WithField("title", t.Name).
 			WithField("limit", limit).
 			Fatal("title needs more prices for warm up")
 	} else {
 		s.Log.
-			WithField("title", t.Id).
+			WithField("title", t.Name).
 			WithField("count", limit).
 			Info("warm up title")
 	}

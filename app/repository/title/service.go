@@ -25,7 +25,7 @@ func (s *Service) getArray(sql string) ([]*entity.Title, error) {
 
 	for rows.Next() {
 		e := entity.Title{}
-		err := rows.Scan(&e.Id, &e.Name, &e.DataUrl, &e.DownloadInterval, &e.ClassName)
+		err := rows.Scan(&e.Id, &e.Name, &e.DataUrl, &e.BatchDataUrl, &e.DownloadInterval, &e.ClassName)
 		if err != nil {
 			return nil, err
 		}
