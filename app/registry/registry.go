@@ -13,6 +13,9 @@ type Registry struct {
 }
 
 func (s *Registry) Add(name string, c interface{}) {
+	if _, exists := s.items[name]; exists == true {
+		panic(errors.New("object is already registered: " + name))
+	}
 	s.items[name] = c
 }
 

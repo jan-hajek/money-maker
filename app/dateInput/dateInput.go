@@ -1,21 +1,13 @@
-package app
+package dateInput
 
 import (
+	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/entity"
 	"github.com/jelito/money-maker/app/float"
-	"time"
 )
 
-type DateInput struct {
-	Date       time.Time
-	OpenPrice  float.Float
-	ClosePrice float.Float
-	HighPrice  float.Float
-	LowPrice   float.Float
-}
-
-func CreateFromEntity(pr *entity.Price) DateInput {
-	return DateInput{
+func CreateFromEntity(pr *entity.Price) app.DateInput {
+	return app.DateInput{
 		Date:       pr.Date,
 		OpenPrice:  float.New(pr.OpenPrice),
 		HighPrice:  float.New(pr.HighPrice),

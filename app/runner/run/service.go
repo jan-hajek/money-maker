@@ -2,8 +2,8 @@ package run
 
 import (
 	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/entity"
-	"github.com/jelito/money-maker/app/float"
 	"github.com/jelito/money-maker/app/interfaces"
 	"github.com/jelito/money-maker/app/log"
 	"github.com/jelito/money-maker/app/mailer"
@@ -185,13 +185,7 @@ func (s *Service) warmUpTrades(
 	}
 
 	for _, pr := range lastPrices {
-		dateInput := app.DateInput{
-			Date:       pr.Date,
-			OpenPrice:  float.New(pr.OpenPrice),
-			HighPrice:  float.New(pr.HighPrice),
-			LowPrice:   float.New(pr.LowPrice),
-			ClosePrice: float.New(pr.ClosePrice),
-		}
+		dateInput := dateInput.CreateFromEntity(pr)
 
 		if trades, exists := tradesPerTitle[t.Id]; exists {
 			for _, tr := range trades {

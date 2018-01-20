@@ -1,8 +1,9 @@
-package runner
+package simulationBatch
 
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
+	"strconv"
 )
 
 var lastPositionId = 0
@@ -16,7 +17,7 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 		}
 		lastPositionId++
 		newPosition := &app.Position{
-			Id:        string(lastPositionId),
+			Id:        strconv.Itoa(lastPositionId),
 			Type:      strategyResult.PositionType,
 			StartDate: dateInput.Date,
 			OpenPrice: dateInput.ClosePrice,
