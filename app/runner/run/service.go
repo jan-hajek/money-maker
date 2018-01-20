@@ -66,7 +66,7 @@ func (s *Service) runTitleCron(
 	titleLog := s.Log.WithField("title", t.Name)
 	titleLog.Info("download price")
 
-	dateInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadLast()
+	dateInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadLast()
 	if err != nil {
 		titleLog.Error(err)
 	}
@@ -153,7 +153,7 @@ func (s *Service) downloadMissingPrices(t *entity.Title) {
 	s.Log.WithField("title", t.Name).Info("load missing prices")
 
 	if s.DownloadMissingPrices {
-		dateInputs, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create().LoadDataFrom()
+		dateInputs, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadDataFrom()
 		if err != nil {
 			s.Log.WithField("title", t.Name).Error(err)
 		}

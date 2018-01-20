@@ -1,10 +1,15 @@
 package admiralMarkets
 
-import "github.com/jelito/money-maker/app/interfaces"
+import (
+	"github.com/jelito/money-maker/app/entity"
+	"github.com/jelito/money-maker/app/interfaces"
+)
 
 type Factory struct {
 }
 
-func (s *Factory) Create() interfaces.TitleService {
-	return &Service{}
+func (s *Factory) Create(title *entity.Title) interfaces.TitleService {
+	return &Service{
+		titleEntity: title,
+	}
 }

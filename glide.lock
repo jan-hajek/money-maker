@@ -1,5 +1,5 @@
-hash: f9c17d6e0d702e8bed07a7a2857beaf5707ec6188ad0e805243f58e84be451d1
-updated: 2018-01-16T23:03:32.5485242+01:00
+hash: b7ab124f7ff63db237bf40eac5e6fd67af099f9c85af8e035e7ba04e1d2ea6cb
+updated: 2018-01-20T13:51:39.2545674+01:00
 imports:
 - name: github.com/go-sql-driver/mysql
   version: 2cc627ac8defc45d65066ae98f898166f580f9a4
@@ -9,6 +9,8 @@ imports:
   version: d0567a9d84a1c40dd7568115ea66f4887bf57b33
   subpackages:
   - util/strutil
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/mattn/go-isatty
   version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
 - name: github.com/rifflock/lfshook
@@ -17,6 +19,10 @@ imports:
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
+- name: github.com/spf13/cobra
+  version: 0c34d16c3123764e413b9ed982ada58b1c3d53ea
+- name: github.com/spf13/pflag
+  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - name: golang.org/x/crypto
   version: 13931e22f9e72ea58bb73048bc752b48c6d4d4ac
   subpackages:

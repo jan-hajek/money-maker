@@ -1,6 +1,6 @@
-package simulationDetail
+package cmd
 
-type config struct {
+type simulationConfig struct {
 	Db         string
 	TitleId    string                                       `yaml:"titleId"`
 	Strategies map[string]map[string]map[string]interface{} `yaml:"strategies"`

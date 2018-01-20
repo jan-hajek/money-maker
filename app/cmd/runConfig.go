@@ -1,6 +1,6 @@
-package run
+package cmd
 
-type config struct {
+type runConfig struct {
 	Db                    string
 	DownloadMissingPrices bool `yaml:"downloadMissingPrices"`
 	Mail                  struct {

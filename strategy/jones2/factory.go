@@ -16,16 +16,16 @@ func (s *Factory) GetName() string {
 
 func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app.StrategyFactoryConfig {
 	return Config{
-		AdxPeriod:     config["adxPeriod"]["default"].(int),
+		AdxPeriod:     int(config["adxPeriod"]["default"].(float64)),
 		SmoothType:    SmoothType(config["smoothType"]["default"].(string)),
 		SmoothAlpha:   float.New(config["smoothAlpha"]["default"].(float64)),
-		OpenLowerAdx:  config["openLowerAdx"]["default"].(int),
-		OpenHigherAdx: config["openHigherAdx"]["default"].(int),
-		CloseAdx:      config["closeAdx"]["default"].(int),
-		DIOpenLevel:   config["diOpenLevel"]["default"].(int),
-		DICloseLevel:  config["diCloseLevel"]["default"].(int),
+		OpenLowerAdx:  int(config["openLowerAdx"]["default"].(float64)),
+		OpenHigherAdx: int(config["openHigherAdx"]["default"].(float64)),
+		CloseAdx:      int(config["closeAdx"]["default"].(float64)),
+		DIOpenLevel:   int(config["diOpenLevel"]["default"].(float64)),
+		DICloseLevel:  int(config["diCloseLevel"]["default"].(float64)),
 		DISDCount:     float.New(config["diSDcount"]["default"].(float64)),
-		PeriodDIMA:    config["periodDIMA"]["default"].(int),
+		PeriodDIMA:    int(config["periodDIMA"]["default"].(float64)),
 		Spread:        float.New(config["spread"]["default"].(float64)),
 		Swap:          float.New(config["swap"]["default"].(float64)),
 	}

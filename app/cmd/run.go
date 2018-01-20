@@ -1,9 +1,8 @@
-package run
+package cmd
 
 import (
 	"database/sql"
 	"github.com/jelito/money-maker/app"
-	"github.com/jelito/money-maker/app/cmd"
 	"github.com/jelito/money-maker/app/mailer"
 	"github.com/jelito/money-maker/app/registry"
 	"github.com/jelito/money-maker/app/repository/position"
@@ -15,23 +14,37 @@ import (
 	appTrade "github.com/jelito/money-maker/app/trade"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 )
 
-type Service struct {
+func init() {
+	var cfgFile string
+
+	runCmd := &cobra.Command{
+		Use:   "run",
+		Short: "start trades for watching",
+		Run: func(cmd *cobra.Command, args []string) {
+			runCmd := &RunCmd{}
+			config := runCmd.loadConfig(&cfgFile)
+			reg := runCmd.createRegistry(config)
+
+			reg.GetByName("app/runner/run").(*run.Service).Run()
+		},
+	}
+
+	runCmd.Flags().StringVar(&cfgFile, "config", "./config.yml", "path to config file")
+
+	rootCmd.AddCommand(runCmd)
 }
 
-func (s *Service) Run(configPath *string) {
-	config := s.loadConfig(configPath)
-	reg := s.createRegistry(config)
-
-	reg.GetByName("app/runner/run").(*run.Service).Run()
+type RunCmd struct {
 }
 
-func (s *Service) loadConfig(path *string) *config {
-	var c config
+func (s *RunCmd) loadConfig(path *string) *runConfig {
+	var c runConfig
 
 	yamlFile, err := ioutil.ReadFile(*path)
 	if err != nil {
@@ -45,7 +58,7 @@ func (s *Service) loadConfig(path *string) *config {
 	return &c
 }
 
-func (s *Service) createRegistry(c *config) *registry.Registry {
+func (s *RunCmd) createRegistry(c *runConfig) *registry.Registry {
 	reg := registry.Create()
 
 	l := logrus.New()
@@ -61,7 +74,7 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	}
 	reg.Add("db", db)
 
-	cmd.AddDefaultClasses(reg)
+	AddDefaultClasses(reg)
 
 	reg.Add("app/trade", &appTrade.Factory{
 		PositionRepository: reg.GetByName("app/repository/position").(*position.Service),
@@ -94,7 +107,7 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	return reg
 }
 
-func (s *Service) createWriter(c *config) *app.Writer {
+func (s *RunCmd) createWriter(c *runConfig) *app.Writer {
 	var outputs []app.WriterOutput
 
 	if c.Writer.Outputs.Stdout.Enabled {

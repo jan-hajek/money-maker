@@ -1,31 +1,43 @@
-package simulationDetail
+package cmd
 
 import (
 	"database/sql"
 	"github.com/jelito/money-maker/app"
-	"github.com/jelito/money-maker/app/cmd"
 	"github.com/jelito/money-maker/app/registry"
 	"github.com/jelito/money-maker/app/repository/price"
 	"github.com/jelito/money-maker/app/runner/simulationDetail"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 )
 
-type Service struct {
+func init() {
+	var cfgFile string
+
+	detailCmd := &cobra.Command{
+		Use:   "detail",
+		Short: "show detail",
+		Run: func(cmd *cobra.Command, args []string) {
+			detailCmd := &SimulationDetailCmd{}
+			config := detailCmd.loadConfig(&cfgFile)
+			reg := detailCmd.createRegistry(config)
+			reg.GetByName("app/runner/simulationDetail").(*simulationDetail.Service).Run()
+		},
+	}
+
+	detailCmd.Flags().StringVar(&cfgFile, "config", "./config.yml", "path to config file")
+
+	simulationCmd.AddCommand(detailCmd)
 }
 
-func (s *Service) Run(configPath *string) {
-	config := s.loadConfig(configPath)
-	reg := s.createRegistry(config)
-
-	reg.GetByName("app/runner/simulationDetail").(*simulationDetail.Service).Run()
+type SimulationDetailCmd struct {
 }
 
-func (s *Service) loadConfig(path *string) *config {
-	var c config
+func (s SimulationDetailCmd) loadConfig(path *string) *simulationConfig {
+	var c simulationConfig
 
 	yamlFile, err := ioutil.ReadFile(*path)
 	if err != nil {
@@ -39,7 +51,7 @@ func (s *Service) loadConfig(path *string) *config {
 	return &c
 }
 
-func (s *Service) createRegistry(c *config) *registry.Registry {
+func (s SimulationDetailCmd) createRegistry(c *simulationConfig) *registry.Registry {
 	reg := registry.Create()
 
 	l := logrus.New()
@@ -55,7 +67,7 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	}
 	reg.Add("db", db)
 
-	cmd.AddDefaultClasses(reg)
+	AddDefaultClasses(reg)
 
 	reg.Add("app/writer", s.createWriter(c))
 
@@ -71,7 +83,7 @@ func (s *Service) createRegistry(c *config) *registry.Registry {
 	return reg
 }
 
-func (s *Service) createWriter(c *config) *app.Writer {
+func (s SimulationDetailCmd) createWriter(c *simulationConfig) *app.Writer {
 	var outputs []app.WriterOutput
 
 	if c.Writer.Outputs.Stdout.Enabled {
