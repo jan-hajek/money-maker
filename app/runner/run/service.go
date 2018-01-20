@@ -14,6 +14,7 @@ import (
 	"github.com/jelito/money-maker/app/repository/trade"
 	appTrade "github.com/jelito/money-maker/app/trade"
 	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -93,31 +94,7 @@ func (s *Service) runTitleCron(
 			if err != nil {
 				tradeLog.Error(err)
 			}
-
-			lastHistoryItems := history.GetLastItems(2)
-
-			if lastHistoryItems[0].Position == nil {
-				tradeLog.Info("no last position")
-			} else {
-				tradeLog.
-					WithField("lastPosition", lastHistoryItems[0].Position.Id).
-					Info("use last position")
-			}
-
-			tradeLog.
-				WithField("action", lastHistoryItems[1].StrategyResult.Action).
-				WithField("type", lastHistoryItems[1].StrategyResult.PositionType).
-				Info("strategy result")
-
-			err = s.Writer.Open()
-			if err != nil {
-				tradeLog.Error(err)
-			}
-			s.Writer.WriteHistory(lastHistoryItems)
-			err = s.Writer.Close()
-			if err != nil {
-				tradeLog.Error(err)
-			}
+			s.writeLastHistoryItems(history, tradeLog)
 
 			s.Log.Info("----------------")
 		}
@@ -172,25 +149,28 @@ func (s *Service) warmUpTrades(
 	limit := 100
 	lastPrices := s.getLastPrices(t.Id, limit)
 
+	log := s.Log.WithField("title", t.Name)
+
 	if len(lastPrices) != limit {
-		s.Log.
-			WithField("title", t.Name).
-			WithField("limit", limit).
-			Fatal("title needs more prices for warm up")
+		log.WithField("limit", limit).Fatal("title needs more prices for warm up")
 	} else {
-		s.Log.
-			WithField("title", t.Name).
-			WithField("count", limit).
-			Info("warm up title")
+		log.WithField("count", limit).Info("warm up title")
 	}
 
-	for _, pr := range lastPrices {
-		dateInput := dateInput.CreateFromEntity(pr)
+	if trades, exists := tradesPerTitle[t.Id]; exists {
+		for _, tr := range trades {
+			var history *app.History
+			var err error
 
-		if trades, exists := tradesPerTitle[t.Id]; exists {
-			for _, tr := range trades {
-				tr.Run(dateInput)
+			for _, pr := range lastPrices {
+				dateInput := dateInput.CreateFromEntity(pr)
+
+				history, err = tr.Run(dateInput)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
+			s.writeLastHistoryItems(history, log)
 		}
 	}
 }
@@ -240,4 +220,32 @@ func (s *Service) getStrategy(id string) *entity.Strategy {
 	}
 
 	return ent
+}
+
+func (s *Service) writeLastHistoryItems(history *app.History, tradeLog *logrus.Entry) {
+	lastHistoryItems := history.GetLastItems(2)
+
+	if lastHistoryItems[0].Position == nil {
+		tradeLog.Info("no last position")
+	} else {
+		tradeLog.
+			WithField("lastPosition", lastHistoryItems[0].Position.Id).
+			Info("use last position")
+	}
+
+	tradeLog.
+		WithField("action", lastHistoryItems[1].StrategyResult.Action).
+		WithField("type", lastHistoryItems[1].StrategyResult.PositionType).
+		Info("strategy result")
+
+	err := s.Writer.Open()
+	if err != nil {
+		tradeLog.Error(err)
+	}
+	s.Writer.WriteHistory(lastHistoryItems)
+	err = s.Writer.Close()
+	if err != nil {
+		tradeLog.Error(err)
+	}
+
 }
