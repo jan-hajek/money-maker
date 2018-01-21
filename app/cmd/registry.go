@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"database/sql"
+	"github.com/Gurpartap/logrus-stack"
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/mailer"
 	"github.com/jelito/money-maker/app/registry"
@@ -43,28 +44,13 @@ func loadConfig(path *string) *config {
 func createRegistry(c *config) *registry.Registry {
 	reg := registry.Create()
 
-	l := logrus.New()
-
-	l.Hooks.Add(lfshook.NewHook(
-		"./data/syslog.log",
-		&logrus.JSONFormatter{},
-	))
+	l := createLogger()
 	reg.Add("log", l)
 
-	db, err := sql.Open("mysql", c.Db)
-	if err != nil {
-		l.Fatal(err)
-	}
+	db := createDb(c, l)
 	reg.Add("db", db)
 
-	reg.Add("app/mailer", mailer.Create(
-		c.Mail.Enabled,
-		c.Mail.Addr,
-		c.Mail.From,
-		c.Mail.Pass,
-		c.Mail.To,
-	))
-
+	reg.Add("app/mailer", createMailer(c))
 	reg.Add("app/writer", createWriter(c))
 
 	reg.Add("app/repository/trade", &trade.Service{Db: db})
@@ -115,6 +101,38 @@ func createRegistry(c *config) *registry.Registry {
 	})
 
 	return reg
+}
+func createLogger() *logrus.Logger {
+	l := logrus.New()
+	l.Hooks.Add(lfshook.NewHook(
+		"./data/syslog.log",
+		&logrus.JSONFormatter{},
+	))
+
+	callerLevels := []logrus.Level{logrus.PanicLevel, logrus.FatalLevel, logrus.ErrorLevel}
+	stackLevels := []logrus.Level{logrus.PanicLevel, logrus.FatalLevel, logrus.ErrorLevel}
+
+	l.AddHook(logrus_stack.NewHook(callerLevels, stackLevels))
+
+	return l
+}
+
+func createDb(c *config, l *logrus.Logger) *sql.DB {
+	db, err := sql.Open("mysql", c.Db)
+	if err != nil {
+		l.Fatal(err)
+	}
+	return db
+}
+
+func createMailer(c *config) *mailer.Service {
+	return mailer.Create(
+		c.Mail.Enabled,
+		c.Mail.Addr,
+		c.Mail.From,
+		c.Mail.Pass,
+		c.Mail.To,
+	)
 }
 
 func createWriter(c *config) *app.Writer {
