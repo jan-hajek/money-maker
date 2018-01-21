@@ -1,6 +1,8 @@
 package run
 
 import (
+	"errors"
+	"fmt"
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/entity"
@@ -49,55 +51,71 @@ func (s *Service) Run() {
 		ticker := time.NewTicker(duration)
 		s.Log.WithField("title", t.Name).WithField("duration", duration.String()).Info("start watching title")
 
+		trades, exists := tradesPerTitle[t.Id]
+		if !exists {
+			trades = make([]*appTrade.Service, 0)
+		}
+
 		go func() {
 			for range ticker.C {
-				s.runTitleCron(t, tradesPerTitle)
+				s.runTitleCron(t, trades)
 			}
 		}()
-
 	}
 
 	wg.Wait()
 }
 
-func (s *Service) runTitleCron(
-	t *entity.Title,
-	tradesPerTitle map[string][]*appTrade.Service,
-) {
+func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 	titleLog := s.Log.WithField("title", t.Name)
 	titleLog.Info("download price")
 
 	dateInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadLast()
 	if err != nil {
 		titleLog.Error(err)
+		return
 	}
 
-	exists, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
+	storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
 	if err != nil {
 		titleLog.Error(err)
+		return
 	}
 
-	if exists != nil {
-		titleLog.Info("price not change")
+	if storedPrice != nil {
+		if err = s.checkStoredPrice(storedPrice, dateInput); err != nil {
+			titleLog.Warning(err)
+		} else {
+			titleLog.Info("price not change")
+		}
 		return
 	}
 
 	titleLog.Info("save price to db")
 	s.savePriceToDb(t, dateInput)
 
-	if trades, exists := tradesPerTitle[t.Id]; exists {
-		// TODO - jhajek routines
-		for _, tr := range trades {
-			tradeLog := titleLog.WithField("trade", tr.Trade.Id)
+	// TODO - jhajek routines
+	for _, tr := range trades {
+		tradeLog := titleLog.WithField("trade", tr.Trade.Id)
 
-			history, err := tr.Run(dateInput)
-			if err != nil {
-				tradeLog.Error(err)
-			}
-			s.writeLastHistoryItems(history, tradeLog)
-
-			s.Log.Info("----------------")
+		history, err := tr.Run(dateInput)
+		if err != nil {
+			tradeLog.Error(err)
+			continue
 		}
+		s.writeLastHistoryItems(history, tradeLog)
+
+		lastHistoryItem, err := history.GetLastItem()
+		if err != nil {
+			tradeLog.Error(err)
+			return
+		}
+		s.Mailer.Send(
+			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
+			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
+		)
+
+		s.Log.Info("----------------")
 	}
 }
 
@@ -111,8 +129,7 @@ func (s *Service) savePriceToDb(t *entity.Title, dateInput app.DateInput) {
 		LowPrice:   dateInput.LowPrice.Val(),
 		ClosePrice: dateInput.ClosePrice.Val(),
 	}
-	err := s.PriceRepository.Insert(priceEnt)
-	if err != nil {
+	if err := s.PriceRepository.Insert(priceEnt); err != nil {
 		s.Log.Error(err)
 	}
 }
@@ -127,16 +144,27 @@ func (s *Service) getTitles() []*entity.Title {
 }
 
 func (s *Service) downloadMissingPrices(t *entity.Title) {
-	s.Log.WithField("title", t.Name).Info("load missing prices")
-
 	if s.DownloadMissingPrices {
+		log := s.Log.WithField("title", t.Name)
+		log.Info("load missing prices")
+
 		dateInputs, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadDataFrom()
 		if err != nil {
-			s.Log.WithField("title", t.Name).Error(err)
+			log.Fatal(err)
 		}
 
 		for _, dateInput := range dateInputs {
-			s.savePriceToDb(t, dateInput)
+			storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if storedPrice == nil {
+				s.savePriceToDb(t, dateInput)
+			} else {
+				if err = s.checkStoredPrice(storedPrice, dateInput); err != nil {
+					log.Warning(err)
+				}
+			}
 		}
 	}
 }
@@ -238,14 +266,49 @@ func (s *Service) writeLastHistoryItems(history *app.History, tradeLog *logrus.E
 		WithField("type", lastHistoryItems[1].StrategyResult.PositionType).
 		Info("strategy result")
 
-	err := s.Writer.Open()
-	if err != nil {
+	if err := s.Writer.Open(); err != nil {
 		tradeLog.Error(err)
 	}
-	s.Writer.WriteHistory(lastHistoryItems)
-	err = s.Writer.Close()
-	if err != nil {
+	if err := s.Writer.WriteHistory(lastHistoryItems); err != nil {
 		tradeLog.Error(err)
+	}
+	if err := s.Writer.Close(); err != nil {
+		tradeLog.Error(err)
+	}
+}
+
+func (s *Service) checkStoredPrice(storedPrice *entity.Price, dateInput app.DateInput) error {
+	type diff struct {
+		field       string
+		storedPrice float64
+		newPrice    float64
 	}
 
+	diffList := make([]diff, 0)
+
+	checkField := func(field string, storedPrice, newPrice float64) {
+		if storedPrice != newPrice {
+			diffList = append(diffList, diff{
+				field:       field,
+				storedPrice: storedPrice,
+				newPrice:    newPrice,
+			})
+		}
+	}
+
+	checkField("open", storedPrice.OpenPrice, dateInput.OpenPrice.Val())
+	checkField("high", storedPrice.HighPrice, dateInput.HighPrice.Val())
+	checkField("low", storedPrice.LowPrice, dateInput.LowPrice.Val())
+	checkField("close", storedPrice.ClosePrice, dateInput.ClosePrice.Val())
+
+	if len(diffList) > 0 {
+		message := fmt.Sprintf("stored price is different than new date: %s", dateInput.Date.Format("2006-01-02 15:04 -0700"))
+		for _, diff := range diffList {
+			message += fmt.Sprintf("field: %s, stored price: %.3f, new price: %.3f", diff.field, diff.storedPrice, diff.newPrice)
+		}
+		return errors.New(message)
+
+	}
+
+	return nil
 }
