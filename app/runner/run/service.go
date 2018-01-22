@@ -56,11 +56,11 @@ func (s *Service) Run() {
 			trades = make([]*appTrade.Service, 0)
 		}
 
-		go func() {
+		go func(title2 *entity.Title, trades2 []*appTrade.Service) {
 			for range ticker.C {
-				s.runTitleCron(t, trades)
+				s.runTitleCron(title2, trades2)
 			}
-		}()
+		}(t, trades)
 	}
 
 	wg.Wait()
@@ -70,20 +70,20 @@ func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 	titleLog := s.Log.WithField("title", t.Name)
 	titleLog.Info("download price")
 
-	dateInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadLast()
+	dtInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadLast()
 	if err != nil {
 		titleLog.Error(err)
 		return
 	}
 
-	storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
+	storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dtInput.Date)
 	if err != nil {
 		titleLog.Error(err)
 		return
 	}
 
 	if storedPrice != nil {
-		if err = s.checkStoredPrice(storedPrice, dateInput); err != nil {
+		if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
 			titleLog.Warning(err)
 		} else {
 			titleLog.Info("price not change")
@@ -92,13 +92,13 @@ func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 	}
 
 	titleLog.Info("save price to db")
-	s.savePriceToDb(t, dateInput)
+	s.savePriceToDb(t, dtInput)
 
 	// TODO - jhajek routines
 	for _, tr := range trades {
 		tradeLog := titleLog.WithField("trade", tr.Trade.Id)
 
-		history, err := tr.Run(dateInput)
+		history, err := tr.Run(dtInput)
 		if err != nil {
 			tradeLog.Error(err)
 			continue
@@ -145,24 +145,24 @@ func (s *Service) getTitles() []*entity.Title {
 
 func (s *Service) downloadMissingPrices(t *entity.Title) {
 	if s.DownloadMissingPrices {
-		log := s.Log.WithField("title", t.Name)
-		log.Info("load missing prices")
+		titleLog := s.Log.WithField("title", t.Name)
+		titleLog.Info("load missing prices")
 
 		dateInputs, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadDataFrom()
 		if err != nil {
-			log.Fatal(err)
+			titleLog.Fatal(err)
 		}
 
-		for _, dateInput := range dateInputs {
-			storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dateInput.Date)
+		for _, dtInput := range dateInputs {
+			storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dtInput.Date)
 			if err != nil {
-				log.Fatal(err)
+				titleLog.Fatal(err)
 			}
 			if storedPrice == nil {
-				s.savePriceToDb(t, dateInput)
+				s.savePriceToDb(t, dtInput)
 			} else {
-				if err = s.checkStoredPrice(storedPrice, dateInput); err != nil {
-					log.Warning(err)
+				if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
+					titleLog.Warning(err)
 				}
 			}
 		}
@@ -177,12 +177,12 @@ func (s *Service) warmUpTrades(
 	limit := 100
 	lastPrices := s.getLastPrices(t.Id, limit)
 
-	log := s.Log.WithField("title", t.Name)
+	titleLog := s.Log.WithField("title", t.Name)
 
 	if len(lastPrices) != limit {
-		log.WithField("limit", limit).Fatal("title needs more prices for warm up")
+		titleLog.WithField("limit", limit).Fatal("title needs more prices for warm up")
 	} else {
-		log.WithField("count", limit).Info("warm up title")
+		titleLog.WithField("count", limit).Info("warm up title")
 	}
 
 	if trades, exists := tradesPerTitle[t.Id]; exists {
@@ -191,14 +191,12 @@ func (s *Service) warmUpTrades(
 			var err error
 
 			for _, pr := range lastPrices {
-				dateInput := dateInput.CreateFromEntity(pr)
-
-				history, err = tr.Run(dateInput)
+				history, err = tr.Run(dateInput.CreateFromEntity(pr))
 				if err != nil {
-					log.Fatal(err)
+					titleLog.Fatal(err)
 				}
 			}
-			s.writeLastHistoryItems(history, log)
+			s.writeLastHistoryItems(history, titleLog)
 		}
 	}
 }
