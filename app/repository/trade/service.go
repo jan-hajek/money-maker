@@ -11,7 +11,7 @@ type Service struct {
 }
 
 func (s *Service) GetAllActive() ([]*entity.Trade, error) {
-	return s.getArray("select * from trade")
+	return s.getArray("select * from trade where active = 1")
 }
 
 func (s *Service) GetAllActiveByTitleId(titleId string) ([]*entity.Trade, error) {
