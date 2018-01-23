@@ -110,10 +110,14 @@ func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 			tradeLog.Error(err)
 			return
 		}
-		s.Mailer.Send(
+
+		err = s.Mailer.Send(
 			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
 			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
 		)
+		if err != nil {
+			tradeLog.Error(err)
+		}
 
 		s.Log.Info("----------------")
 	}
