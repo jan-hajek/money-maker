@@ -20,6 +20,7 @@ type config struct {
 		From    string
 		Pass    string
 		To      string
+		Host    string
 	}
 	Run struct {
 		DownloadMissingPrices bool `yaml:"downloadMissingPrices"`

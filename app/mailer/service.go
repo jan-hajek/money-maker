@@ -4,13 +4,14 @@ import (
 	"net/smtp"
 )
 
-func Create(enabled bool, addr, from, pass, to string) *Service {
+func Create(enabled bool, addr, from, pass, to, host string) *Service {
 	return &Service{
 		enabled: enabled,
 		addr:    addr,
 		from:    from,
 		pass:    pass,
 		to:      to,
+		host:    host,
 	}
 }
 
@@ -20,6 +21,7 @@ type Service struct {
 	from    string
 	pass    string
 	to      string
+	host    string
 }
 
 func (s *Service) Send(subject, message string) error {
@@ -34,7 +36,7 @@ func (s *Service) Send(subject, message string) error {
 
 	return smtp.SendMail(
 		s.addr,
-		smtp.PlainAuth("", s.from, s.pass, s.addr),
+		smtp.PlainAuth("", s.from, s.pass, s.host),
 		s.from,
 		[]string{s.to},
 		[]byte(msg),

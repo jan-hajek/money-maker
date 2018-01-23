@@ -132,6 +132,7 @@ func createMailer(c *config) *mailer.Service {
 		c.Mail.From,
 		c.Mail.Pass,
 		c.Mail.To,
+		c.Mail.Host,
 	)
 }
 
