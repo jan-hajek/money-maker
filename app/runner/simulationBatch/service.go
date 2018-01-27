@@ -7,16 +7,14 @@ import (
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/log"
 	"github.com/jelito/money-maker/app/registry"
-	"github.com/jelito/money-maker/app/repository/price"
 )
 
 type Service struct {
-	PriceRepository *price.Service
 	Log             log.Log
-	TitleId         string
 	Writer          *app.Writer
 	Strategies      map[string]map[string]map[string]interface{}
 	Registry        *registry.Registry
+	DateInputLoader dateInput.Loader
 }
 
 func (s *Service) Run() {
@@ -29,14 +27,9 @@ func (s *Service) Run() {
 		return fmt.Sprintf("(%d/%d)", b.Current(), b.Total)
 	})
 
-	// FIXME - jhajek
-	prices, err := s.PriceRepository.GetLastItemsByTitle(s.TitleId, 10000)
+	dateInputs, err := s.DateInputLoader.Load()
 	if err != nil {
 		s.Log.Fatal(err)
-	}
-	dateInputs := make([]app.DateInput, len(prices))
-	for index, pr := range prices {
-		dateInputs[index] = dateInput.CreateFromEntity(pr)
 	}
 
 	err = s.Writer.Open()

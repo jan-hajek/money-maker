@@ -26,7 +26,17 @@ type config struct {
 		DownloadMissingPrices bool `yaml:"downloadMissingPrices"`
 	}
 	Simulation struct {
-		TitleId    string                                       `yaml:"titleId"`
+		Source struct {
+			Csv struct {
+				Enabled         bool
+				FilePath        string `yaml:"filePath"`
+				TimeParseFormat string `yaml:"timeParseFormat"`
+			}
+			Db struct {
+				Enabled bool
+				TitleId string `yaml:"titleId"`
+			}
+		}
 		Strategies map[string]map[string]map[string]interface{} `yaml:"strategies"`
 	}
 }

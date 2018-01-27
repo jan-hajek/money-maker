@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/Gurpartap/logrus-stack"
 	"github.com/jelito/money-maker/app"
+	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/mailer"
 	"github.com/jelito/money-maker/app/registry"
 	"github.com/jelito/money-maker/app/repository/position"
@@ -83,25 +84,24 @@ func createRegistry(c *config) *registry.Registry {
 	})
 
 	reg.Add("app/runner/simulationBatch", &simulationBatch.Service{
-		PriceRepository: reg.GetByName("app/repository/price").(*price.Service),
 		Log:             l,
 		Writer:          reg.GetByName("app/writer").(*app.Writer),
-		TitleId:         c.Simulation.TitleId,
 		Strategies:      c.Simulation.Strategies,
 		Registry:        reg,
+		DateInputLoader: createDateInputLoader(c, l, reg),
 	})
 
 	reg.Add("app/runner/simulationDetail", &simulationDetail.Service{
-		PriceRepository: reg.GetByName("app/repository/price").(*price.Service),
 		Log:             l,
 		Writer:          reg.GetByName("app/writer").(*app.Writer),
-		TitleId:         c.Simulation.TitleId,
 		Strategies:      c.Simulation.Strategies,
 		Registry:        reg,
+		DateInputLoader: createDateInputLoader(c, l, reg),
 	})
 
 	return reg
 }
+
 func createLogger() *logrus.Logger {
 	l := logrus.New()
 	l.Hooks.Add(lfshook.NewHook(
@@ -155,4 +155,28 @@ func createWriter(c *config) *app.Writer {
 	return &app.Writer{
 		Outputs: outputs,
 	}
+}
+
+func createDateInputLoader(c *config, l *logrus.Logger, reg *registry.Registry) dateInput.Loader {
+	cs := c.Simulation.Source
+
+	if cs.Db.Enabled && cs.Csv.Enabled {
+		l.Fatal("enable only one simulation source in config")
+	}
+
+	if cs.Db.Enabled {
+		return &dateInput.DatabaseLoader{
+			TitleId:         cs.Db.TitleId,
+			PriceRepository: reg.GetByName("app/repository/price").(*price.Service),
+		}
+	}
+
+	if cs.Csv.Enabled {
+		return &dateInput.CsvLoader{
+			InputFilePath:   cs.Csv.FilePath,
+			TimeParseFormat: cs.Csv.TimeParseFormat,
+		}
+	}
+
+	return nil
 }
