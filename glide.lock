@@ -1,10 +1,10 @@
-hash: ce89086288523222505f19d236c3f5ad5a92ad175539de62ef1dd4007381fc6b
-updated: 2018-01-21T18:48:13.8484512+01:00
+hash: fd5a71d9bbc41ff200621732ae8e34008f90509a34d3187ceeda484b2e8430ee
+updated: 2018-01-27T21:10:19.2483788+01:00
 imports:
 - name: github.com/facebookgo/stack
   version: 751773369052141c013c6e827a71e8f35c07879c
 - name: github.com/go-sql-driver/mysql
-  version: 2cc627ac8defc45d65066ae98f898166f580f9a4
+  version: bc14601d1bd56421dd60f561e6052c9ed77f9daf
 - name: github.com/gosuri/uilive
   version: ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e
 - name: github.com/gosuri/uiprogress
@@ -24,22 +24,23 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/spf13/cobra
-  version: 0c34d16c3123764e413b9ed982ada58b1c3d53ea
+  version: 2df9a531813370438a4d79bfc33e21f58063ed87
 - name: github.com/spf13/pflag
-  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/takama/daemon
+  version: f30a97dd1445619884e03e7ed088bc1b3c4f767e
 - name: golang.org/x/crypto
-  version: 13931e22f9e72ea58bb73048bc752b48c6d4d4ac
+  version: 9477e0b78b9ac3d0b03822fd95422e2fe07627cd
   subpackages:
   - ssh/terminal
 - name: golang.org/x/sys
-  version: fff93fa7cd278d84afc205751523809c464168ab
+  version: 2d6f6f883a06fc0d5f4b14a81e4c28705ea64c15
   subpackages:
   - unix
-  - windows
 - name: google.golang.org/appengine
   version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
   - cloudsql
 - name: gopkg.in/yaml.v2
-  version: d670f9405373e636a5a2765eea47fac0c9bc91a4
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
 testImports: []

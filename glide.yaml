@@ -10,3 +10,4 @@ import:
 - package: github.com/spf13/pflag
 - package: github.com/Gurpartap/logrus-stack
 - package: github.com/facebookgo/stack
+- package: github.com/takama/daemon
