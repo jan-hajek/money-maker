@@ -24,6 +24,10 @@ type Service struct {
 	host    string
 }
 
+func (s *Service) ForceEnable() {
+	s.enabled = true
+}
+
 func (s *Service) Send(subject, message string) error {
 	if s.enabled == false {
 		return nil
