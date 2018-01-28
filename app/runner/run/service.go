@@ -30,17 +30,17 @@ type Service struct {
 	TradeFactory          *appTrade.Factory
 	Log                   log.Log
 	Writer                *app.Writer
-	Mailer                *mailer.Service
+	MailBufferFactory     *mailer.BufferFactory
 	DownloadMissingPrices bool
 }
 
 func (s *Service) Run() {
-
 	wg := sync.WaitGroup{}
+	tradesPerTitle, tradesCount := s.getTradesPerTitle()
+	titles := s.getTitles()
+	mailBuffer := s.MailBufferFactory.Create(tradesCount)
 
-	tradesPerTitle := s.getTradesPerTitle()
-
-	for _, t := range s.getTitles() {
+	for _, t := range titles {
 		wg.Add(1)
 
 		s.downloadMissingPrices(t)
@@ -58,7 +58,7 @@ func (s *Service) Run() {
 
 		go func(title2 *entity.Title, trades2 []*appTrade.Service) {
 			for range ticker.C {
-				s.runTitleCron(title2, trades2)
+				s.runTitleCron(title2, trades2, mailBuffer)
 			}
 		}(t, trades)
 	}
@@ -66,9 +66,13 @@ func (s *Service) Run() {
 	wg.Wait()
 }
 
-func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
+func (s *Service) runTitleCron(
+	t *entity.Title,
+	trades []*appTrade.Service,
+	mailBuffer chan<- mailer.BufferItem,
+) {
 	titleLog := s.Log.WithField("title", t.Name)
-	titleLog.Info("download price")
+	titleLog.Debug("download price")
 
 	dtInput, err := s.Registry.GetByName(t.ClassName).(interfaces.TitleFactory).Create(t).LoadLast()
 	if err != nil {
@@ -86,12 +90,12 @@ func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 		if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
 			titleLog.Warning(err)
 		} else {
-			titleLog.Info("price not change")
+			titleLog.Debug("price not change")
 		}
 		return
 	}
 
-	titleLog.Info("save price to db")
+	titleLog.Debug("save price to db")
 	s.savePriceToDb(t, dtInput)
 
 	// TODO - jhajek routines
@@ -111,12 +115,9 @@ func (s *Service) runTitleCron(t *entity.Title, trades []*appTrade.Service) {
 			return
 		}
 
-		err = s.Mailer.Send(
-			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
-			fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
-		)
-		if err != nil {
-			tradeLog.Error(err)
+		mailBuffer <- mailer.BufferItem{
+			Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
+			Message: fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
 		}
 
 		s.Log.Info("----------------")
@@ -214,7 +215,7 @@ func (s *Service) getLastPrices(titleId string, limit int) []*entity.Price {
 	return list
 }
 
-func (s *Service) getTradesPerTitle() map[string][]*appTrade.Service {
+func (s *Service) getTradesPerTitle() (map[string][]*appTrade.Service, int) {
 
 	list, err := s.TradeRepository.GetAllActive()
 	if err != nil {
@@ -222,6 +223,7 @@ func (s *Service) getTradesPerTitle() map[string][]*appTrade.Service {
 	}
 
 	trades := make(map[string][]*appTrade.Service)
+	count := 0
 	for _, t := range list {
 		strategyEntity := s.getStrategy(t.StrategyId)
 		strategyFactory := s.Registry.GetByName(strategyEntity.ClassName).(app.StrategyFactory)
@@ -238,9 +240,10 @@ func (s *Service) getTradesPerTitle() map[string][]*appTrade.Service {
 			trades[t.TitleId],
 			s.TradeFactory.Create(t, strategyClass),
 		)
+		count++
 	}
 
-	return trades
+	return trades, count
 }
 
 func (s *Service) getStrategy(id string) *entity.Strategy {

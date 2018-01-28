@@ -71,15 +71,18 @@ func createRegistry(c *config) *registry.Registry {
 	})
 
 	reg.Add("app/runner/run", &run.Service{
-		Registry:              reg,
-		StrategyRepository:    reg.GetByName("app/repository/strategy").(*strategy.Service),
-		TradeRepository:       reg.GetByName("app/repository/trade").(*trade.Service),
-		PriceRepository:       reg.GetByName("app/repository/price").(*price.Service),
-		TitleRepository:       reg.GetByName("app/repository/title").(*title.Service),
-		TradeFactory:          reg.GetByName("app/trade").(*appTrade.Factory),
-		Log:                   l,
-		Writer:                reg.GetByName("app/writer").(*app.Writer),
-		Mailer:                reg.GetByName("app/mailer").(*mailer.Service),
+		Registry:           reg,
+		StrategyRepository: reg.GetByName("app/repository/strategy").(*strategy.Service),
+		TradeRepository:    reg.GetByName("app/repository/trade").(*trade.Service),
+		PriceRepository:    reg.GetByName("app/repository/price").(*price.Service),
+		TitleRepository:    reg.GetByName("app/repository/title").(*title.Service),
+		TradeFactory:       reg.GetByName("app/trade").(*appTrade.Factory),
+		Log:                l,
+		Writer:             reg.GetByName("app/writer").(*app.Writer),
+		MailBufferFactory: createMailBufferFactory(
+			reg.GetByName("app/mailer").(*mailer.Service),
+			l,
+		),
 		DownloadMissingPrices: c.Run.DownloadMissingPrices,
 	})
 
@@ -104,6 +107,7 @@ func createRegistry(c *config) *registry.Registry {
 
 func createLogger() *logrus.Logger {
 	l := logrus.New()
+	l.SetLevel(logrus.DebugLevel)
 	l.Hooks.Add(lfshook.NewHook(
 		"./data/syslog.log",
 		&logrus.JSONFormatter{},
@@ -134,6 +138,14 @@ func createMailer(c *config) *mailer.Service {
 		c.Mail.To,
 		c.Mail.Host,
 	)
+}
+
+func createMailBufferFactory(service *mailer.Service, l *logrus.Logger) *mailer.BufferFactory {
+	return &mailer.BufferFactory{
+		Mailer: service,
+		Log:    l,
+	}
+
 }
 
 func createWriter(c *config) *app.Writer {
