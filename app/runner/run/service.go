@@ -15,6 +15,7 @@ import (
 	"github.com/jelito/money-maker/app/repository/title"
 	"github.com/jelito/money-maker/app/repository/trade"
 	appTrade "github.com/jelito/money-maker/app/trade"
+	"github.com/jelito/money-maker/app/writer"
 	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"sync"
@@ -29,7 +30,7 @@ type Service struct {
 	TradeRepository       *trade.Service
 	TradeFactory          *appTrade.Factory
 	Log                   log.Log
-	Writer                *app.Writer
+	Writer                *writer.Writer
 	MailBufferFactory     *mailer.BufferFactory
 	DownloadMissingPrices bool
 }

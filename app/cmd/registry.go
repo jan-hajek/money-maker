@@ -3,7 +3,6 @@ package cmd
 import (
 	"database/sql"
 	"github.com/Gurpartap/logrus-stack"
-	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/mailer"
 	"github.com/jelito/money-maker/app/registry"
@@ -16,6 +15,7 @@ import (
 	"github.com/jelito/money-maker/app/runner/simulationBatch"
 	"github.com/jelito/money-maker/app/runner/simulationDetail"
 	appTrade "github.com/jelito/money-maker/app/trade"
+	"github.com/jelito/money-maker/app/writer"
 	"github.com/jelito/money-maker/strategy/jones"
 	"github.com/jelito/money-maker/strategy/jones2"
 	"github.com/jelito/money-maker/strategy/samson"
@@ -78,7 +78,7 @@ func createRegistry(c *config) *registry.Registry {
 		TitleRepository:    reg.GetByName("app/repository/title").(*title.Service),
 		TradeFactory:       reg.GetByName("app/trade").(*appTrade.Factory),
 		Log:                l,
-		Writer:             reg.GetByName("app/writer").(*app.Writer),
+		Writer:             reg.GetByName("app/writer").(*writer.Writer),
 		MailBufferFactory: createMailBufferFactory(
 			reg.GetByName("app/mailer").(*mailer.Service),
 			l,
@@ -88,7 +88,7 @@ func createRegistry(c *config) *registry.Registry {
 
 	reg.Add("app/runner/simulationBatch", &simulationBatch.Service{
 		Log:             l,
-		Writer:          reg.GetByName("app/writer").(*app.Writer),
+		Writer:          reg.GetByName("app/writer").(*writer.Writer),
 		Strategies:      c.Simulation.Strategies,
 		Registry:        reg,
 		DateInputLoader: createDateInputLoader(c, l, reg),
@@ -96,7 +96,7 @@ func createRegistry(c *config) *registry.Registry {
 
 	reg.Add("app/runner/simulationDetail", &simulationDetail.Service{
 		Log:             l,
-		Writer:          reg.GetByName("app/writer").(*app.Writer),
+		Writer:          reg.GetByName("app/writer").(*writer.Writer),
 		Strategies:      c.Simulation.Strategies,
 		Registry:        reg,
 		DateInputLoader: createDateInputLoader(c, l, reg),
@@ -110,7 +110,7 @@ func createLogger() *logrus.Logger {
 	l.SetLevel(logrus.DebugLevel)
 	l.Hooks.Add(lfshook.NewHook(
 		"./data/syslog.log",
-		&logrus.JSONFormatter{},
+		&logrus.TextFormatter{},
 	))
 
 	callerLevels := []logrus.Level{logrus.PanicLevel, logrus.FatalLevel, logrus.ErrorLevel}
@@ -148,23 +148,23 @@ func createMailBufferFactory(service *mailer.Service, l *logrus.Logger) *mailer.
 
 }
 
-func createWriter(c *config) *app.Writer {
-	var outputs []app.WriterOutput
+func createWriter(c *config) *writer.Writer {
+	var outputs []writer.Output
 
 	if c.Writer.Outputs.Stdout.Enabled {
-		outputs = append(outputs, &app.StdOutWriterOutput{
+		outputs = append(outputs, &writer.StdOutWriterOutput{
 			DateFormat: c.Writer.ParseFormat,
 		})
 	}
 
 	if c.Writer.Outputs.Csv.Enabled {
-		outputs = append(outputs, &app.CsvWriterOutput{
+		outputs = append(outputs, &writer.CsvWriterOutput{
 			File:       c.Writer.Outputs.Csv.Path,
 			DateFormat: c.Writer.ParseFormat,
 		})
 	}
 
-	return &app.Writer{
+	return &writer.Writer{
 		Outputs: outputs,
 	}
 }

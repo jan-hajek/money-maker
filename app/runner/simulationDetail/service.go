@@ -5,11 +5,12 @@ import (
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/log"
 	"github.com/jelito/money-maker/app/registry"
+	"github.com/jelito/money-maker/app/writer"
 )
 
 type Service struct {
 	Log             log.Log
-	Writer          *app.Writer
+	Writer          *writer.Writer
 	Strategies      map[string]map[string]map[string]interface{}
 	Registry        *registry.Registry
 	DateInputLoader dateInput.Loader
