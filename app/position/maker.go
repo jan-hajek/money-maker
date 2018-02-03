@@ -1,23 +1,27 @@
-package simulationBatch
+package position
 
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
-	"strconv"
+	"github.com/satori/go.uuid"
 )
 
-var lastPositionId = 0
+type Maker struct {
+}
 
-func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, lastPosition *app.Position) *app.Position {
+func (s *Maker) Create(
+	strategyResult app.StrategyResult,
+	dateInput app.DateInput,
+	lastPosition *app.Position,
+) *app.Position {
 
 	switch strategyResult.Action {
 	case app.OPEN:
 		if lastPosition != nil {
 			panic("position is already open")
 		}
-		lastPositionId++
 		newPosition := &app.Position{
-			Id:        strconv.Itoa(lastPositionId),
+			Id:        uuid.Must(uuid.NewV4()).String(),
 			Type:      strategyResult.PositionType,
 			StartDate: dateInput.Date,
 			OpenPrice: dateInput.ClosePrice,
@@ -26,8 +30,8 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 			Costs:     strategyResult.Costs,
 		}
 
-		newPosition.Profit = calculateProfit(newPosition)
-		newPosition.PossibleProfit = calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+		newPosition.Profit = s.calculateProfit(newPosition)
+		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 
 		return newPosition
 	case app.CLOSE:
@@ -39,7 +43,7 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 		newPosition.ClosePrice = dateInput.ClosePrice
 		newPosition.Sl = strategyResult.Sl
 		newPosition.Costs = strategyResult.Costs
-		newPosition.Profit = calculateProfit(newPosition)
+		newPosition.Profit = s.calculateProfit(newPosition)
 		newPosition.PossibleProfit = newPosition.Profit
 
 		return newPosition
@@ -51,16 +55,17 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 
 		newPosition.Sl = strategyResult.Sl
 		newPosition.Costs = strategyResult.Costs
-		newPosition.Profit = calculateProfit(newPosition)
-		newPosition.PossibleProfit = calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+		newPosition.Profit = s.calculateProfit(newPosition)
+		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 
 		return newPosition
 	case app.SKIP:
 		if lastPosition != nil {
 			newPosition := lastPosition.Clone()
 
-			newPosition.Profit = calculateProfit(newPosition)
-			newPosition.PossibleProfit = calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+			newPosition.Costs = strategyResult.Costs
+			newPosition.Profit = s.calculateProfit(newPosition)
+			newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 
 			return newPosition
 		}
@@ -69,7 +74,7 @@ func createPosition(strategyResult app.StrategyResult, dateInput app.DateInput, 
 	return lastPosition
 }
 
-func calculateProfit(position *app.Position) float.Float {
+func (s *Maker) calculateProfit(position *app.Position) float.Float {
 	profit := position.Amount.Val() * (position.ClosePrice.Val() - position.OpenPrice.Val())
 	if position.Type == app.SHORT {
 		profit *= -1
@@ -78,7 +83,7 @@ func calculateProfit(position *app.Position) float.Float {
 	return float.New(profit)
 }
 
-func calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
+func (s *Maker) calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
 	profit := position.Amount.Val() * (actualPrice.Val() - position.OpenPrice.Val())
 	if position.Type == app.SHORT {
 		profit *= -1

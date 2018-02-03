@@ -116,9 +116,22 @@ func (s *Service) runTitleCron(
 			return
 		}
 
-		mailBuffer <- mailer.BufferItem{
-			Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
-			Message: fmt.Sprintf("title: %s, action: %s", t.Name, lastHistoryItem.StrategyResult.Action),
+		if lastHistoryItem.Position == nil {
+			mailBuffer <- mailer.BufferItem{
+				Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
+				Message: fmt.Sprintf("%s, %s", t.Name, lastHistoryItem.StrategyResult.Action),
+			}
+		} else {
+			mailBuffer <- mailer.BufferItem{
+				Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
+				Message: fmt.Sprintf(
+					"%s, %s, %s, %.3f",
+					t.Name,
+					lastHistoryItem.StrategyResult.Action,
+					lastHistoryItem.Position.Type,
+					lastHistoryItem.Position.Sl,
+				),
+			}
 		}
 
 		s.Log.Info("----------------")

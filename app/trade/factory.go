@@ -4,12 +4,12 @@ import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/entity"
 	"github.com/jelito/money-maker/app/log"
-	"github.com/jelito/money-maker/app/repository/position"
+	"github.com/jelito/money-maker/app/position"
 )
 
 type Factory struct {
-	PositionRepository *position.Service
-	Log                log.Log
+	PositionMaker *position.Maker
+	Log           log.Log
 }
 
 func (s *Factory) Create(trade *entity.Trade, strategy app.Strategy) *Service {
@@ -21,12 +21,12 @@ func (s *Factory) Create(trade *entity.Trade, strategy app.Strategy) *Service {
 	}
 
 	return &Service{
-		Trade:              trade,
-		positionRepository: s.PositionRepository,
-		strategy:           strategy,
-		history:            history,
-		indicators:         indicators,
-		iteration:          0,
-		log:                s.Log,
+		Trade:         trade,
+		strategy:      strategy,
+		history:       history,
+		indicators:    indicators,
+		iteration:     0,
+		log:           s.Log,
+		positionMaker: s.PositionMaker,
 	}
 }

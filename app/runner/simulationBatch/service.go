@@ -6,6 +6,7 @@ import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/log"
+	"github.com/jelito/money-maker/app/position"
 	"github.com/jelito/money-maker/app/registry"
 	"github.com/jelito/money-maker/app/writer"
 )
@@ -16,6 +17,7 @@ type Service struct {
 	Strategies      map[string]map[string]map[string]interface{}
 	Registry        *registry.Registry
 	DateInputLoader dateInput.Loader
+	PositionMaker   *position.Maker
 }
 
 func (s *Service) Run() {
@@ -140,7 +142,7 @@ func (s *Service) runStrategy(strategy app.Strategy, dateInputs []app.DateInput)
 			IndicatorResults: indicatorResults,
 		})
 
-		lastPosition = createPosition(strategyResult, dateInput, lastPosition)
+		lastPosition = s.PositionMaker.Create(strategyResult, dateInput, lastPosition)
 
 		historyItem := &app.HistoryItem{
 			DateInput:        dateInput,

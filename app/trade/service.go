@@ -3,33 +3,24 @@ package trade
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/entity"
-	"github.com/jelito/money-maker/app/float"
 	"github.com/jelito/money-maker/app/log"
-	"github.com/jelito/money-maker/app/repository/position"
+	"github.com/jelito/money-maker/app/position"
 )
 
 type Service struct {
-	positionRepository *position.Service
+	Trade         *entity.Trade
+	strategy      app.Strategy
+	indicators    []app.Indicator
+	history       *app.History
+	positionMaker *position.Maker
+	log           log.Log
 
-	Trade        *entity.Trade
-	strategy     app.Strategy
-	indicators   []app.Indicator
 	iteration    int
-	history      *app.History
 	lastPosition *app.Position
-	log          log.Log
 }
 
 func (s *Service) Run(dateInput app.DateInput) (*app.History, error) {
 	s.iteration++
-
-	var err error
-	s.lastPosition, err = s.getLastPosition()
-	if err != nil {
-		return nil, err
-	}
-
-	s.history.SetLastPosition(s.lastPosition)
 
 	indicatorResults := s.getIndicatorResults(dateInput)
 
@@ -40,12 +31,19 @@ func (s *Service) Run(dateInput app.DateInput) (*app.History, error) {
 		IndicatorResults: indicatorResults,
 	})
 
+	s.lastPosition = s.positionMaker.Create(strategyResult, dateInput, s.lastPosition)
+
 	historyItem := &app.HistoryItem{
 		DateInput:        dateInput,
 		IndicatorResults: indicatorResults,
 		StrategyResult:   strategyResult,
+		Position:         s.lastPosition,
 	}
 	s.history.AddItem(historyItem)
+
+	if strategyResult.Action == app.CLOSE {
+		s.lastPosition = nil
+	}
 
 	return s.history, nil
 }
@@ -68,24 +66,4 @@ func (s *Service) getIndicatorResults(dateInput app.DateInput) map[string]app.In
 	}
 
 	return indicatorResults
-}
-
-func (s *Service) getLastPosition() (*app.Position, error) {
-
-	positionEntity, err := s.positionRepository.LastOpenByTrade(s.Trade.Id)
-	if err != nil {
-		return nil, err
-	}
-	if positionEntity == nil {
-		return nil, nil
-	}
-
-	return &app.Position{
-		Id:     positionEntity.Id,
-		Type:   app.PositionType(positionEntity.Type),
-		Amount: float.New(positionEntity.Amount),
-		Sl:     float.New(positionEntity.Sl),
-		Costs:  float.New(positionEntity.Costs),
-	}, nil
-
 }

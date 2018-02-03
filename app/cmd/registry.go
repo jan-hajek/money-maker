@@ -5,6 +5,7 @@ import (
 	"github.com/Gurpartap/logrus-stack"
 	"github.com/jelito/money-maker/app/dateInput"
 	"github.com/jelito/money-maker/app/mailer"
+	appPosition "github.com/jelito/money-maker/app/position"
 	"github.com/jelito/money-maker/app/registry"
 	"github.com/jelito/money-maker/app/repository/position"
 	"github.com/jelito/money-maker/app/repository/price"
@@ -65,9 +66,11 @@ func createRegistry(c *config) *registry.Registry {
 	reg.Add("strategy/jones2", &jones2.Factory{})
 	reg.Add("title/admiralMarkets", &admiralMarkets.Factory{})
 
+	reg.Add("app/position/maker", &appPosition.Maker{})
+
 	reg.Add("app/trade", &appTrade.Factory{
-		PositionRepository: reg.GetByName("app/repository/position").(*position.Service),
-		Log:                l,
+		PositionMaker: reg.GetByName("app/position/maker").(*appPosition.Maker),
+		Log:           l,
 	})
 
 	reg.Add("app/runner/run", &run.Service{
