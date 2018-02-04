@@ -27,6 +27,7 @@ func writerGetHistoryHeader(item *app.HistoryItem) []string {
 		"costs",
 		"profit",
 		"poss. profit",
+		"poss. prof. %",
 	)
 
 	return a
@@ -55,6 +56,7 @@ func writerGetHistoryRow(item *app.HistoryItem, dateFormat string) []string {
 			formatValue(position.Costs),
 			formatValue(position.Profit),
 			formatValue(position.PossibleProfit),
+			formatValue(position.PossibleProfitPercent.Val()*100),
 		)
 	}
 

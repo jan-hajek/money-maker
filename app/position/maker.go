@@ -65,7 +65,7 @@ func (s *Maker) Create(
 
 			newPosition.Costs = strategyResult.Costs
 			newPosition.Profit = s.calculateProfit(newPosition)
-			newPosition.PossibleProfitPercent = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+			newPosition.PossibleProfitPercent = s.calculatePossibleProfitPercent(newPosition, dateInput.ClosePrice)
 			newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 
 			return newPosition
