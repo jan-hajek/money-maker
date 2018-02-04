@@ -110,6 +110,8 @@ func (s *Service) runStrategy(strategy app.Strategy, dateInputs []app.DateInput)
 	var lastPosition *app.Position
 	indicators := strategy.GetIndicators()
 
+	idGenerator := &position.UuidGenerator{}
+
 	history := &app.History{
 		Strategy:   strategy,
 		Indicators: indicators,
@@ -142,7 +144,7 @@ func (s *Service) runStrategy(strategy app.Strategy, dateInputs []app.DateInput)
 			IndicatorResults: indicatorResults,
 		})
 
-		lastPosition = s.PositionMaker.Create(strategyResult, dateInput, lastPosition)
+		lastPosition = s.PositionMaker.Create(strategyResult, dateInput, lastPosition, idGenerator)
 
 		historyItem := &app.HistoryItem{
 			DateInput:        dateInput,

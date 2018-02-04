@@ -14,6 +14,7 @@ type Service struct {
 	history       *app.History
 	positionMaker *position.Maker
 	log           log.Log
+	idGenerator   position.IdGenerator
 
 	iteration    int
 	lastPosition *app.Position
@@ -31,7 +32,7 @@ func (s *Service) Run(dateInput app.DateInput) (*app.History, error) {
 		IndicatorResults: indicatorResults,
 	})
 
-	s.lastPosition = s.positionMaker.Create(strategyResult, dateInput, s.lastPosition)
+	s.lastPosition = s.positionMaker.Create(strategyResult, dateInput, s.lastPosition, s.idGenerator)
 
 	historyItem := &app.HistoryItem{
 		DateInput:        dateInput,

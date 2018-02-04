@@ -28,5 +28,6 @@ func (s *Factory) Create(trade *entity.Trade, strategy app.Strategy) *Service {
 		iteration:     0,
 		log:           s.Log,
 		positionMaker: s.PositionMaker,
+		idGenerator:   &position.UuidGenerator{},
 	}
 }

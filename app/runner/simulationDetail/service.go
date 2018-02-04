@@ -19,7 +19,6 @@ type Service struct {
 }
 
 func (s *Service) Run() {
-
 	strategies := s.loadStrategies()
 
 	s.Log.Info("strategies: ", len(strategies))
@@ -79,6 +78,7 @@ func (s *Service) loadStrategies() []app.Strategy {
 func (s *Service) runStrategy(strategy app.Strategy, dateInputs []app.DateInput) *app.History {
 	var lastPosition *app.Position
 	indicators := strategy.GetIndicators()
+	idGenerator := &position.IncrementGenerator{}
 
 	history := &app.History{
 		Strategy:   strategy,
@@ -112,7 +112,7 @@ func (s *Service) runStrategy(strategy app.Strategy, dateInputs []app.DateInput)
 			IndicatorResults: indicatorResults,
 		})
 
-		lastPosition = s.PositionMaker.Create(strategyResult, dateInput, lastPosition)
+		lastPosition = s.PositionMaker.Create(strategyResult, dateInput, lastPosition, idGenerator)
 
 		historyItem := &app.HistoryItem{
 			DateInput:        dateInput,

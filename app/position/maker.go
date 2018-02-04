@@ -3,7 +3,6 @@ package position
 import (
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
-	"github.com/satori/go.uuid"
 )
 
 type Maker struct {
@@ -13,6 +12,7 @@ func (s *Maker) Create(
 	strategyResult app.StrategyResult,
 	dateInput app.DateInput,
 	lastPosition *app.Position,
+	idGenerator IdGenerator,
 ) *app.Position {
 
 	switch strategyResult.Action {
@@ -21,7 +21,7 @@ func (s *Maker) Create(
 			panic("position is already open")
 		}
 		newPosition := &app.Position{
-			Id:        uuid.Must(uuid.NewV4()).String(),
+			Id:        idGenerator.Generate(),
 			Type:      strategyResult.PositionType,
 			StartDate: dateInput.Date,
 			OpenPrice: dateInput.ClosePrice,
@@ -30,8 +30,8 @@ func (s *Maker) Create(
 			Costs:     strategyResult.Costs,
 		}
 
-		newPosition.Profit = s.calculateProfit(newPosition)
-		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+		newPosition.PossibleProfitPercent = s.calculatePossibleProfitPercent(newPosition, dateInput.ClosePrice)
+		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition)
 
 		return newPosition
 	case app.CLOSE:
@@ -43,8 +43,10 @@ func (s *Maker) Create(
 		newPosition.ClosePrice = dateInput.ClosePrice
 		newPosition.Sl = strategyResult.Sl
 		newPosition.Costs = strategyResult.Costs
+
 		newPosition.Profit = s.calculateProfit(newPosition)
-		newPosition.PossibleProfit = newPosition.Profit
+		newPosition.PossibleProfitPercent = s.calculatePossibleProfitPercent(newPosition, dateInput.ClosePrice)
+		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition)
 
 		return newPosition
 	case app.CHANGE:
@@ -55,8 +57,9 @@ func (s *Maker) Create(
 
 		newPosition.Sl = strategyResult.Sl
 		newPosition.Costs = strategyResult.Costs
-		newPosition.Profit = s.calculateProfit(newPosition)
-		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+
+		newPosition.PossibleProfitPercent = s.calculatePossibleProfitPercent(newPosition, dateInput.ClosePrice)
+		newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition)
 
 		return newPosition
 	case app.SKIP:
@@ -64,9 +67,9 @@ func (s *Maker) Create(
 			newPosition := lastPosition.Clone()
 
 			newPosition.Costs = strategyResult.Costs
-			newPosition.Profit = s.calculateProfit(newPosition)
+
 			newPosition.PossibleProfitPercent = s.calculatePossibleProfitPercent(newPosition, dateInput.ClosePrice)
-			newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
+			newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition)
 
 			return newPosition
 		}
@@ -93,6 +96,6 @@ func (s *Maker) calculatePossibleProfitPercent(position *app.Position, actualPri
 	return percent
 }
 
-func (s *Maker) calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
+func (s *Maker) calculatePossibleProfit(position *app.Position) float.Float {
 	return position.Amount.Multi(position.OpenPrice).Multi(position.PossibleProfitPercent)
 }
