@@ -116,23 +116,7 @@ func (s *Service) runTitleCron(
 			return
 		}
 
-		if lastHistoryItem.Position == nil {
-			mailBuffer <- mailer.BufferItem{
-				Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
-				Message: fmt.Sprintf("%s, %s", t.Name, lastHistoryItem.StrategyResult.Action),
-			}
-		} else {
-			mailBuffer <- mailer.BufferItem{
-				Subject: fmt.Sprintf("%s", lastHistoryItem.StrategyResult.Action),
-				Message: fmt.Sprintf(
-					"%s, %s, %s, %.3f",
-					t.Name,
-					lastHistoryItem.StrategyResult.Action,
-					lastHistoryItem.Position.Type,
-					lastHistoryItem.Position.Sl,
-				),
-			}
-		}
+		s.sendEmail(lastHistoryItem, mailBuffer, t)
 
 		s.Log.Info("----------------")
 	}
@@ -330,4 +314,30 @@ func (s *Service) checkStoredPrice(storedPrice *entity.Price, dateInput app.Date
 	}
 
 	return nil
+}
+
+func (s *Service) sendEmail(lastHistoryItem *app.HistoryItem, mailBuffer chan<- mailer.BufferItem, t *entity.Title) {
+	action := lastHistoryItem.StrategyResult.Amount
+	subject := fmt.Sprintf("%s", action)
+	var message string
+
+	if lastHistoryItem.StrategyResult.ReportMessage != "" {
+		message = lastHistoryItem.StrategyResult.ReportMessage
+	} else {
+		if lastHistoryItem.Position == nil {
+			message = fmt.Sprintf("%s", action)
+		} else {
+			message = fmt.Sprintf(
+				"%s, %s, %.3f",
+				action,
+				lastHistoryItem.Position.Type,
+				lastHistoryItem.Position.Sl,
+			)
+		}
+	}
+
+	mailBuffer <- mailer.BufferItem{
+		Subject: subject,
+		Message: fmt.Sprintf("%s, ", t.Name) + message,
+	}
 }

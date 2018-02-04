@@ -65,6 +65,7 @@ func (s *Maker) Create(
 
 			newPosition.Costs = strategyResult.Costs
 			newPosition.Profit = s.calculateProfit(newPosition)
+			newPosition.PossibleProfitPercent = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 			newPosition.PossibleProfit = s.calculatePossibleProfit(newPosition, dateInput.ClosePrice)
 
 			return newPosition
@@ -83,11 +84,15 @@ func (s *Maker) calculateProfit(position *app.Position) float.Float {
 	return float.New(profit)
 }
 
-func (s *Maker) calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
-	profit := position.Amount.Val() * (actualPrice.Val() - position.OpenPrice.Val())
+func (s *Maker) calculatePossibleProfitPercent(position *app.Position, actualPrice float.Float) float.Float {
+	percent := actualPrice.Sub(position.OpenPrice).Div(position.OpenPrice)
 	if position.Type == app.SHORT {
-		profit *= -1
+		percent = percent.MultiFloat(-1)
 	}
 
-	return float.New(profit)
+	return percent
+}
+
+func (s *Maker) calculatePossibleProfit(position *app.Position, actualPrice float.Float) float.Float {
+	return position.Amount.Multi(position.OpenPrice).Multi(position.PossibleProfitPercent)
 }

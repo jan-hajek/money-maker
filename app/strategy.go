@@ -22,11 +22,12 @@ func (s *StrategyInput) IndicatorResult(c Indicator) IndicatorResult {
 }
 
 type StrategyResult struct {
-	Action       StrategyAction
-	PositionType PositionType
-	Amount       float.Float
-	Sl           float.Float
-	Costs        float.Float
+	Action        StrategyAction
+	PositionType  PositionType
+	Amount        float.Float
+	Sl            float.Float
+	Costs         float.Float
+	ReportMessage string
 }
 
 type StrategyAction string
