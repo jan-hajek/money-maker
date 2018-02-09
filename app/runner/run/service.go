@@ -317,7 +317,7 @@ func (s *Service) checkStoredPrice(storedPrice *entity.Price, dateInput app.Date
 }
 
 func (s *Service) sendEmail(lastHistoryItem *app.HistoryItem, mailBuffer chan<- mailer.BufferItem, t *entity.Title) {
-	action := lastHistoryItem.StrategyResult.Amount
+	action := lastHistoryItem.StrategyResult.Action
 	subject := fmt.Sprintf("%s", action)
 	var message string
 
