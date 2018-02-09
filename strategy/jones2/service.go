@@ -1,11 +1,13 @@
 package jones2
 
 import (
+	"fmt"
 	"github.com/jelito/money-maker/app"
 	"github.com/jelito/money-maker/app/float"
 	"github.com/jelito/money-maker/app/smooth"
 	"github.com/jelito/money-maker/indicator/adxAvg"
 	"github.com/jelito/money-maker/indicator/adxEmaRSI"
+	"math"
 )
 
 type Service struct {
@@ -24,6 +26,7 @@ func (s *Service) GetPrintValues() []app.PrintValue {
 		{Label: "Cadx", Value: s.config.CloseAdx},
 		{Label: "DIOL", Value: s.config.DIOpenLevel},
 		{Label: "DICL", Value: s.config.DICloseLevel},
+		{Label: "SP", Value: s.config.StopProfit},
 		//{Label: "DISDcount", Value: s.config.DISDCount},
 		//{Label: "diPeriod", Value: s.config.PeriodDIMA},
 	}
@@ -100,12 +103,14 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 			//
 			openLong = true
 		}
-		if DIPlus < DIMinus && (-currentDIdiff >= float64(s.config.DIOpenLevel) && currentDIdiff < lastDIdiff) {
+		if DIPlus < DIMinus && (-currentDIdiff >= float64(s.config.DIOpenLevel)) && (currentDIdiff < lastDIdiff) {
 			// (currentDIdiff <= currentDILB )
 			// ||
 			openShort = true
 		}
 	}
+
+	var sl float.Float
 
 	if input.Position == nil {
 		if (currentAdx > float64(s.config.OpenHigherAdx)) ||
@@ -116,12 +121,14 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 				//(currentDIdiff >= currentDIUB)
 				// ||
 				positionType = app.LONG
+				sl = float.New(input.DateInput.ClosePrice.Val() - 0.20*input.DateInput.ClosePrice.Val())
 			}
-			if DIPlus < DIMinus && (-currentDIdiff >= float64(s.config.DIOpenLevel) && currentDIdiff < lastDIdiff) {
+			if DIPlus < DIMinus && (-currentDIdiff >= float64(s.config.DIOpenLevel)) && (currentDIdiff < lastDIdiff) {
 				//(currentDIdiff <= currentDILB)
 				// ||
 				positionType = app.SHORT
 				openShort = true
+				sl = float.New(input.DateInput.ClosePrice.Val() + 0.20*input.DateInput.ClosePrice.Val())
 			}
 
 			if positionType != "" {
@@ -130,49 +137,132 @@ func (s Service) Resolve(input app.StrategyInput) app.StrategyResult {
 					PositionType: positionType,
 					Amount:       float.New(100 / input.DateInput.ClosePrice.Val()),
 					Costs:        s.config.Spread,
+					Sl:           sl,
+					ReportMessage: fmt.Sprintf(
+						"%s, %.1f, %.1f, %s, %.3f",
+						app.OPEN, lastDIdiff, currentDIdiff,
+						positionType,
+						sl,
+					),
 				}
 			}
 		}
 	} else {
 		if input.Position.Type == app.LONG {
+			newSL := s.getNewSl(input.Position, int(s.config.StopProfit.Val()))
+
 			if !openLong &&
 				(DIPlus <= DIMinus ||
 					(currentAdx <= float64(s.config.CloseAdx) && lastAdx >= float64(s.config.CloseAdx)) ||
 					//(currentDIdiff <= currentDILB) ||
-					(currentDIdiff <= float64(s.config.DICloseLevel) && lastDIdiff > float64(s.config.DICloseLevel))) {
+					(currentDIdiff <= float64(s.config.DICloseLevel) && lastDIdiff > float64(s.config.DICloseLevel)) ||
+					(input.DateInput.LowPrice.Val() < input.Position.Sl.Val())) {
 				return app.StrategyResult{
 					Action: app.CLOSE,
 					Costs:  input.Position.Costs,
+					Sl:     newSL,
+					ReportMessage: fmt.Sprintf(
+						"%s, %.1f, %.1f",
+						app.CLOSE, lastDIdiff, currentDIdiff,
+					),
 				}
 			} else {
-				return app.StrategyResult{
-					Action: app.CHANGE,
-					Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+				if newSL != input.Position.Sl {
+					return app.StrategyResult{
+						Action: app.CHANGE,
+						Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+						Sl:     newSL,
+						ReportMessage: fmt.Sprintf(
+							"%s, %.1f, %.1f, %.3f",
+							app.CHANGE, lastDIdiff, currentDIdiff,
+							newSL,
+						),
+					}
+				} else {
+					return app.StrategyResult{
+						Action: app.SKIP,
+						Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+						Sl:     newSL,
+						ReportMessage: fmt.Sprintf(
+							"%s, %.1f, %.1f",
+							app.SKIP, lastDIdiff, currentDIdiff,
+						),
+					}
 				}
 			}
 		}
 
 		if input.Position.Type == app.SHORT {
+			newSL := s.getNewSl(input.Position, int(s.config.StopProfit.Val()))
+
 			if !openShort &&
 				(DIPlus >= DIMinus ||
 					(currentAdx <= float64(s.config.CloseAdx) && lastAdx >= float64(s.config.CloseAdx)) ||
 					//(currentDIdiff >= currentDIUB) ||
-					(-currentDIdiff <= float64(s.config.DICloseLevel) && -lastDIdiff > float64(s.config.DICloseLevel))) {
+					(-currentDIdiff <= float64(s.config.DICloseLevel) && -lastDIdiff > float64(s.config.DICloseLevel)) ||
+					(input.DateInput.HighPrice.Val() > input.Position.Sl.Val())) {
 				return app.StrategyResult{
 					Action: app.CLOSE,
 					Costs:  input.Position.Costs,
+					Sl:     newSL,
+					ReportMessage: fmt.Sprintf(
+						"%s, %.1f, %.1f",
+						app.CLOSE, lastDIdiff, currentDIdiff,
+					),
 				}
 			} else {
-				return app.StrategyResult{
-					Action: app.CHANGE,
-					Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+				if newSL != input.Position.Sl {
+					return app.StrategyResult{
+						Action: app.CHANGE,
+						Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+						Sl:     newSL,
+						ReportMessage: fmt.Sprintf(
+							"%s, %.1f, %.1f, %.3f",
+							app.CHANGE, lastDIdiff, currentDIdiff,
+							newSL,
+						),
+					}
+				} else {
+					return app.StrategyResult{
+						Action: app.SKIP,
+						Costs:  input.Position.Costs.Add(float.New(input.DateInput.ClosePrice.Val() * input.Position.Amount.Val() * (s.config.Swap.Val() / 8640))),
+						Sl:     newSL,
+						ReportMessage: fmt.Sprintf(
+							"%s, %.1f, %.1f",
+							app.SKIP, lastDIdiff, currentDIdiff,
+						),
+					}
 				}
+
 			}
 		}
 	}
 
 	return app.StrategyResult{
 		Action: app.SKIP,
+		ReportMessage: fmt.Sprintf(
+			"%s, %.1f, %.1f",
+			app.SKIP, lastDIdiff, currentDIdiff,
+		),
 	}
 
+}
+
+func (s Service) getNewSl(position *app.Position, stopProfit int) float.Float {
+
+	sl := position.Sl
+	newSl := sl
+	profit := 100 * position.PossibleProfitPercent.Val()
+	profitFloored := int(math.Floor(100 * position.PossibleProfitPercent.Val()))
+	openPrice := position.OpenPrice.Val()
+	if profit > float64(stopProfit) {
+		r := profitFloored - profitFloored%stopProfit - stopProfit
+		if position.Type == app.SHORT {
+			newSl = float.New(math.Min(sl.Val(), openPrice*(1.00-(float64(r)/100.0))))
+		} else {
+			newSl = float.New(math.Max(sl.Val(), openPrice*(1.00+(float64(r)/100.0))))
+		}
+	}
+
+	return newSl
 }

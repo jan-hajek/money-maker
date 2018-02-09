@@ -17,6 +17,7 @@ type Config struct {
 	PeriodDIMA    int
 	Spread        float.Float
 	Swap          float.Float
+	StopProfit    float.Float
 }
 
 type SmoothType string

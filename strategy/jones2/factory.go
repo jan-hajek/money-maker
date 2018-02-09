@@ -28,6 +28,7 @@ func (s *Factory) GetDefaultConfig(config map[string]map[string]interface{}) app
 		PeriodDIMA:    int(config["periodDIMA"]["default"].(float64)),
 		Spread:        float.New(config["spread"]["default"].(float64)),
 		Swap:          float.New(config["swap"]["default"].(float64)),
+		StopProfit:    float.New(config["stopProfit"]["default"].(float64)),
 	}
 }
 
@@ -99,6 +100,11 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 		float.New(config["swap"]["maximal"].(float64)),
 		float.New(config["swap"]["step"].(float64)),
 	)
+	stopProfitValues := app.FloatSteps(
+		float.New(config["stopProfit"]["minimal"].(float64)),
+		float.New(config["stopProfit"]["maximal"].(float64)),
+		float.New(config["stopProfit"]["step"].(float64)),
+	)
 
 	return app.Combinations(
 		[]int{
@@ -114,6 +120,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 			len(periodDIMAValues),
 			len(spreadValues),
 			len(swapValues),
+			len(stopProfitValues),
 		},
 		func(positions []int) app.StrategyFactoryConfig {
 			return Config{
@@ -129,6 +136,7 @@ func (s *Factory) GetBatchConfigs(config map[string]map[string]interface{}) []ap
 				PeriodDIMA:    periodDIMAValues[positions[9]],
 				Spread:        spreadValues[positions[10]],
 				Swap:          swapValues[positions[11]],
+				StopProfit:    stopProfitValues[positions[12]],
 			}
 		},
 	)
