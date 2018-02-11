@@ -1,0 +1,31 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/Gurpartap/logrus-stack"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/go-sql-driver/mysql"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gosuri/uiprogress"
+
+[[constraint]]
+  name = "github.com/rifflock/lfshook"
+  version = "2.2.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/satori/go.uuid"
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.4"
+
+[[constraint]]
+  name = "github.com/takama/daemon"
+  version = "0.9.3"
+
+[prune]
+  go-tests = true
+  unused-packages = true
