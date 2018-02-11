@@ -8,6 +8,8 @@ import (
 )
 
 func init() {
+	var cfgFile string
+
 	installCmd := &cobra.Command{
 		Use:   "install",
 		Short: "install app as service",
@@ -17,9 +19,17 @@ func init() {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			srv.Install("run --config=./config.yml")
+			res, err := srv.Install("run --config=" + *&cfgFile)
+
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+			println(res)
 		},
 	}
+
+	installCmd.Flags().StringVar(&cfgFile, "config", "./config.yml", "path to config file")
 
 	rootCmd.AddCommand(installCmd)
 }

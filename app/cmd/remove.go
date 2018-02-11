@@ -17,7 +17,12 @@ func init() {
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			srv.Remove()
+			res, err := srv.Remove()
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+			println(res)
 		},
 	}
 
