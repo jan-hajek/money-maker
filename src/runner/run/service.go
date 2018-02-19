@@ -92,7 +92,7 @@ func (s *Service) runTitleCron(
 		if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
 			titleLog.Warning(err)
 		} else {
-			titleLog.Debug("price not change")
+			titleLog.Debug("no new price")
 		}
 		return
 	}
@@ -306,9 +306,9 @@ func (s *Service) checkStoredPrice(storedPrice *entity.Price, dateInput dateInpu
 	checkField("close", storedPrice.ClosePrice, dateInput.ClosePrice.Val())
 
 	if len(diffList) > 0 {
-		message := fmt.Sprintf("stored price is different than new date: %s", dateInput.Date.Format("2006-01-02 15:04 -0700"))
+		message := fmt.Sprintf("price diff [stored <> new], date: %s", dateInput.Date.Format("2006-01-02 15:04 -0700"))
 		for _, diff := range diffList {
-			message += fmt.Sprintf("field: %s, stored price: %.3f, new price: %.3f", diff.field, diff.storedPrice, diff.newPrice)
+			message += fmt.Sprintf(", %s [%.3f <> %.3f]", diff.field, diff.storedPrice, diff.newPrice)
 		}
 		return errors.New(message)
 

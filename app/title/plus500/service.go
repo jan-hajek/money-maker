@@ -93,6 +93,9 @@ func (s *Service) load(url string) ([]JsonLine, error) {
 		return nil, errors.New(string(body))
 	}
 
+	// remove last item, because plus500 changing it
+	rawLines = rawLines[0 : len(rawLines)-1]
+
 	jsonLines := make([]JsonLine, 0)
 	for _, line := range rawLines {
 		fmt.Println(time.Unix(int64(line[0].(float64)/1000), 0).In(time.Local))
