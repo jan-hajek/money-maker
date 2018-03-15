@@ -1,8 +1,10 @@
 package run
 
 import (
-	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/jelito/money-maker/src/dateInput"
 	"github.com/jelito/money-maker/src/entity"
 	"github.com/jelito/money-maker/src/interfaces"
@@ -17,10 +19,7 @@ import (
 	"github.com/jelito/money-maker/src/title"
 	appTrade "github.com/jelito/money-maker/src/trade"
 	"github.com/jelito/money-maker/src/writer"
-	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 type Service struct {
@@ -46,63 +45,113 @@ func (s *Service) Run() {
 		wg.Add(1)
 
 		s.downloadMissingPrices(t)
-
 		s.warmUpTrades(t, tradesPerTitle)
-
-		duration := time.Second * time.Duration(t.DownloadInterval)
-		ticker := time.NewTicker(duration)
-		s.Log.WithField("title", t.Name).WithField("duration", duration.String()).Info("start watching title")
 
 		trades, exists := tradesPerTitle[t.Id]
 		if !exists {
 			trades = make([]*appTrade.Service, 0)
 		}
 
-		go func(title2 *entity.Title, trades2 []*appTrade.Service) {
-			for range ticker.C {
-				s.runTitleCron(title2, trades2, mailBuffer)
-			}
-		}(t, trades)
+		go s.runTitleWaiting(t, trades, mailBuffer)
 	}
 
 	wg.Wait()
 }
 
-func (s *Service) runTitleCron(
+func (s *Service) runTitleWaiting(
 	t *entity.Title,
 	trades []*appTrade.Service,
 	mailBuffer chan<- mailer.BufferItem,
 ) {
 	titleLog := s.Log.WithField("title", t.Name)
-	titleLog.Debug("download price")
 
-	dtInput, err := s.Registry.GetByName(t.ClassName).(title.Factory).Create(t).LoadLast()
-	if err != nil {
-		titleLog.Error(err)
-		return
+	for {
+		now := time.Now()
+		// TODO - jhajek variabilni
+		nextHourStart := now.Add(time.Hour).Truncate(time.Hour)
+		nextTick := nextHourStart.Sub(now)
+
+		titleLog.Info("next processing in ", nextTick)
+
+		<-time.NewTimer(nextTick).C
+
+		s.runTitlePriceDownloading(t, titleLog, trades, mailBuffer)
 	}
+}
 
+func (s *Service) runTitlePriceDownloading(
+	t *entity.Title,
+	log log.Log,
+	trades []*appTrade.Service,
+	mailBuffer chan<- mailer.BufferItem,
+) {
+	tickerD := time.Minute * 1
+	timeoutD := time.Minute * 10
+
+	ticker := time.NewTicker(tickerD)
+	timeout := time.NewTimer(timeoutD)
+
+	defer ticker.Stop()
+	defer timeout.Stop()
+
+	for {
+		log.Info("downloading price")
+
+		dtInput, err := s.getNewTitlePrice(t)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		if s.isTitlePriceNew(t, dtInput, log) {
+			log.Info("saving price to db")
+			s.savePriceToDb(t, dtInput)
+
+			s.processTitle(t, dtInput, trades, log, mailBuffer)
+			return
+		}
+
+		select {
+		case <-timeout.C:
+			log.Warning("timeout, no strategy ")
+			return
+		case <-ticker.C:
+		}
+	}
+}
+func (s *Service) getNewTitlePrice(t *entity.Title) (dateInput.DateInput, error) {
+	return s.Registry.GetByName(t.ClassName).(title.Factory).Create(t).LoadLast()
+}
+
+func (s *Service) isTitlePriceNew(t *entity.Title, dtInput dateInput.DateInput, log log.Log) bool {
 	storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dtInput.Date)
 	if err != nil {
-		titleLog.Error(err)
-		return
+		log.Error(err)
+		return false
 	}
 
 	if storedPrice != nil {
 		if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
-			titleLog.Warning(err)
+			log.Warning(err)
 		} else {
-			titleLog.Debug("no new price")
+			log.Info("no new price")
 		}
-		return
+		return false
 	}
 
-	titleLog.Debug("save price to db")
-	s.savePriceToDb(t, dtInput)
+	return true
+}
 
+func (s *Service) processTitle(
+	t *entity.Title,
+	dtInput dateInput.DateInput,
+	trades []*appTrade.Service,
+	log log.Log,
+	mailBuffer chan<- mailer.BufferItem,
+) {
 	// TODO - jhajek routines
 	for _, tr := range trades {
-		tradeLog := titleLog.WithField("trade", tr.Trade.Id)
+		tradeLog := log.WithField("trade", tr.Trade.Id)
 
 		history, err := tr.Run(dtInput)
 		if err != nil {
@@ -123,21 +172,6 @@ func (s *Service) runTitleCron(
 	}
 }
 
-func (s *Service) savePriceToDb(t *entity.Title, dateInput dateInput.DateInput) {
-	priceEnt := &entity.Price{
-		Id:         uuid.Must(uuid.NewV4()).String(),
-		TitleId:    t.Id,
-		Date:       dateInput.Date,
-		OpenPrice:  dateInput.OpenPrice.Val(),
-		HighPrice:  dateInput.HighPrice.Val(),
-		LowPrice:   dateInput.LowPrice.Val(),
-		ClosePrice: dateInput.ClosePrice.Val(),
-	}
-	if err := s.PriceRepository.Insert(priceEnt); err != nil {
-		s.Log.Error(err)
-	}
-}
-
 func (s *Service) getTitles() []*entity.Title {
 	list, err := s.TitleRepository.GetAllActive()
 	if err != nil {
@@ -145,32 +179,6 @@ func (s *Service) getTitles() []*entity.Title {
 	}
 
 	return list
-}
-
-func (s *Service) downloadMissingPrices(t *entity.Title) {
-	if s.DownloadMissingPrices {
-		titleLog := s.Log.WithField("title", t.Name)
-		titleLog.Info("load missing prices")
-
-		dateInputs, err := s.Registry.GetByName(t.ClassName).(title.Factory).Create(t).LoadDataFrom()
-		if err != nil {
-			titleLog.Fatal(err)
-		}
-
-		for _, dtInput := range dateInputs {
-			storedPrice, err := s.PriceRepository.GetByTitleAndDate(t.Id, dtInput.Date)
-			if err != nil {
-				titleLog.Fatal(err)
-			}
-			if storedPrice == nil {
-				s.savePriceToDb(t, dtInput)
-			} else {
-				if err = s.checkStoredPrice(storedPrice, dtInput); err != nil {
-					titleLog.Warning(err)
-				}
-			}
-		}
-	}
 }
 
 func (s *Service) warmUpTrades(
@@ -203,15 +211,6 @@ func (s *Service) warmUpTrades(
 			s.writeLastHistoryItems(history, titleLog)
 		}
 	}
-}
-
-func (s *Service) getLastPrices(titleId string, limit int) []*entity.Price {
-	list, err := s.PriceRepository.GetLastItemsByTitle(titleId, limit)
-	if err != nil {
-		s.Log.Fatal(err)
-	}
-
-	return list
 }
 
 func (s *Service) getTradesPerTitle() (map[string][]*appTrade.Service, int) {
@@ -279,42 +278,6 @@ func (s *Service) writeLastHistoryItems(history interfaces.History, tradeLog *lo
 	if err := s.Writer.Close(); err != nil {
 		tradeLog.Error(err)
 	}
-}
-
-func (s *Service) checkStoredPrice(storedPrice *entity.Price, dateInput dateInput.DateInput) error {
-	type diff struct {
-		field       string
-		storedPrice float64
-		newPrice    float64
-	}
-
-	diffList := make([]diff, 0)
-
-	checkField := func(field string, storedPrice, newPrice float64) {
-		if storedPrice != newPrice {
-			diffList = append(diffList, diff{
-				field:       field,
-				storedPrice: storedPrice,
-				newPrice:    newPrice,
-			})
-		}
-	}
-
-	checkField("open", storedPrice.OpenPrice, dateInput.OpenPrice.Val())
-	checkField("high", storedPrice.HighPrice, dateInput.HighPrice.Val())
-	checkField("low", storedPrice.LowPrice, dateInput.LowPrice.Val())
-	checkField("close", storedPrice.ClosePrice, dateInput.ClosePrice.Val())
-
-	if len(diffList) > 0 {
-		message := fmt.Sprintf("price diff [stored <> new], date: %s", dateInput.Date.Format("2006-01-02 15:04 -0700"))
-		for _, diff := range diffList {
-			message += fmt.Sprintf(", %s [%.3f <> %.3f]", diff.field, diff.storedPrice, diff.newPrice)
-		}
-		return errors.New(message)
-
-	}
-
-	return nil
 }
 
 func (s *Service) sendEmail(lastHistoryItem interfaces.HistoryItem, mailBuffer chan<- mailer.BufferItem, t *entity.Title) {
